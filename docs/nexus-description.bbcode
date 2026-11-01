@@ -1,0 +1,124 @@
+[img]https://raw.githubusercontent.com/hubertdungen/SpaceBourne2-ClearHUD/main/docs/banner.png[/img]
+
+[size=6][b]Clear HUD — a reticle you can see, and HUD colours for SpaceBourne 2[/b][/size]
+
+On foot, SpaceBourne 2's reticle is thin, light grey and has no outline: on snow, sand, a bright sky or a busy station you lose it. Clear HUD gives it a strong colour, a dark outline and a bigger size, lets you change the HUD's cyan for another colour, and can hide the damage numbers on foot.
+
+Version 0.1.0 · [url=https://www.nexusmods.com/spacebourne2/mods/16]Nexus Mods page[/url] · UE4SS Lua mod · works alone or with the rest of the realism set (see below). Asked for by players on the DBK Games Discord.
+
+[line]
+[size=5][b]What it does[/b][/size]
+
+[list]
+[*][b]A reticle you can see:[/b] green by default, full opacity, 25% bigger, with a dark outline that keeps it readable on any background. It still reacts to moving, firing and aiming like the game's own.
+[*][b]Your colour and shape:[/b] seven colour presets or your own colour, opacity, size, outline or drop shadow, and any of the game's 11 reticle shapes.
+[*][b]HUD colour themes:[/b] amber, green, red, blue, purple or white instead of the game's cyan, or your own colour. Health, warnings and other colours stay as they are. Off by default.
+[*][b]Damage numbers on foot:[/b] hide them in the settings (the game's own "Damage Text" option only covers ships in space), with an optional key to flip them while you play.
+[*][b]Light:[/b] applied when the game builds the reticle or the HUD, never every frame.
+[*][b]On by default.[/b] Install it and the reticle is clear.
+[/list]
+
+[img]https://raw.githubusercontent.com/hubertdungen/SpaceBourne2-ClearHUD/main/docs/reticle.png[/img]
+
+[img]https://raw.githubusercontent.com/hubertdungen/SpaceBourne2-ClearHUD/main/docs/theme-amber.jpg[/img]
+
+[line]
+[size=5][b]What the game's own settings already do[/b][/size]
+
+Settings → Interface has no reticle, HUD colour or enemy-marker options. What it has:
+
+[list]
+[*][b]Damage Text[/b]: damage numbers over enemy ships in space (off by default). It does not cover the numbers on foot; Clear HUD's HideDamageNumbers does.
+[*][b]Indicators Text Scale[/b]: size of the text on the HUD markers.
+[*][b]Show Weapons Heat At Crosshair[/b], [b]Static Game HUD[/b], [b]Show Telemetry / Bottom Ship Status Only When Weapons Are Online[/b], [b]Disable Weapon Activation HUD Effect[/b]: ship HUD options.
+[*][b]Display Keybinds[/b]: never, gamepad only or always.
+[/list]
+
+[line]
+[size=5][b]Requirements[/b][/size]
+
+[list]
+[*]SpaceBourne 2 (Steam).
+[*][url=https://github.com/UE4SS-RE/RE-UE4SS/releases/tag/v3.0.1]UE4SS 3.0.1[/url], a free script loader for Unreal Engine games. Installing HTR or the realism set installer installs it too.
+[/list]
+
+[line]
+[size=5][b]Install[/b][/size]
+
+Option A (recommended): the [url=https://www.nexusmods.com/spacebourne2/mods/11]SpaceBourne 2 Realism installer[/url].
+
+Option B, manual:
+
+[list=1]
+[*]Download ClearHUD-0.1.0.zip from the [url=https://github.com/hubertdungen/SpaceBourne2-ClearHUD/releases]releases[/url].
+[*]Extract it into the game folder (...\steamapps\common\SpaceBourne 2\). It adds SB2\Binaries\Win64\Mods\ClearHUD\; the enabled.txt inside turns it on.
+[*]Load a game and draw a weapon.
+[/list]
+
+Uninstall: delete SB2\Binaries\Win64\Mods\ClearHUD. The mod never writes to your saves.
+
+[line]
+[size=5][b]Controls[/b][/size]
+
+None needed. Optional: set ToggleKey to hide or show the damage numbers while you play; a short message confirms each press.
+
+[line]
+[size=5][b]Settings[/b][/size]
+
+Edit Mods\ClearHUD\scripts\config.lua, then restart the game. Every line is optional.
+
+[list]
+[*]Enabled: false switches the mod off completely.
+[*]Reticle.Preset: "Green", "Yellow", "Orange", "Red", "Magenta", "Cyan", "White", "Game" (keeps the grey) or "Custom" (uses Reticle.Color).
+[*]Reticle.Opacity (1.0), Reticle.Size (1.25; 1.0 is the game's size).
+[*]Reticle.Outline: "Outline", "Shadow" or "Off"; OutlineColor, OutlineOpacity (0.9), OutlineWidth (1.5 pixels).
+[*]Reticle.Style: 0 keeps the weapon's reticle (shape 6); 1 to 11 picks one of the game's shapes.
+[*]Reticle.Enabled: false leaves the reticle as the game makes it.
+[*]Theme.Preset: "Game" (cyan, no change), "Amber", "Green", "Red", "Blue", "Purple", "White" or "Custom" (uses Theme.Color).
+[*]HideDamageNumbers: hide the damage numbers on foot (false).
+[*]ToggleKey: none by default (""). Any key the game and the realism set don't use, with or without Shift+; the others are refused.
+[/list]
+
+Colours are { red, green, blue } from 0 to 1, for example { 1.0, 0.8, 0.0 }.
+
+[line]
+[size=5][b]How it works[/b][/size]
+
+When a weapon adds the reticle, Clear HUD sets its colour, opacity and size, and puts black copies of the same reticle right behind it, a pixel or two to each side, as the outline. The copies get the same movement, recoil and zoom animations, so they stay in place. The theme swaps the HUD's cyan once, when the HUD is built. Nothing runs every frame. Details: [url=https://github.com/hubertdungen/SpaceBourne2-ClearHUD/blob/main/DESIGN.md]DESIGN.md[/url].
+
+[line]
+[size=5][b]Status and known limits[/b][/size]
+
+Known limits:
+
+[list]
+[*][b]On foot only[/b] for the reticle. Ship reticles are the game's own.
+[*][b]Enemy markers[/b] (the red markers over enemies on foot) cannot be hidden: the game has no switch for them, and the only way found crashed the game, so it is not in this version.
+[*][b]Theme[/b]: parts the game draws straight on screen (markers, ship HUD lines) and icons whose colour is baked into the picture keep their colours. Panels the game rebuilds while you play (for example new list entries) may come back cyan until the next load. With a theme on, the first load of a game pauses about half a second longer.
+[*][b]Tactical First Person[/b] hides the reticle in first person by default; set its Crosshair to "Game" to keep Clear HUD's reticle there.
+[/list]
+
+[line]
+[size=5][b]Part of the SpaceBourne 2 realism set[/b][/size]
+
+Part of the realism set, built around [url=https://www.nexusmods.com/spacebourne2/mods/4]Hardcore Tactical Realism[/url] as the core mod. HTR is not required: this mod works on its own or with any of the others. To install them all at once, use the installer: [url=https://github.com/hubertdungen/SpaceBourne2-Realism]SpaceBourne 2 Realism[/url] ([url=https://www.nexusmods.com/spacebourne2/mods/11]Nexus[/url]).
+
+[list]
+[*][b]Hardcore Tactical Realism (HTR) — realistic ballistics and tactical AI[/b]: released: [url=https://github.com/hubertdungen/SpaceBourne2-HardcoreTacticalRealism]GitHub[/url] · [url=https://www.nexusmods.com/spacebourne2/mods/4]Nexus Mods[/url] · [url=https://steamcommunity.com/app/1646850/discussions/0/573805072991123580]Steam discussion[/url]
+[*][b]Split Controls — separate invert for ship and on foot[/b]: released: [url=https://github.com/hubertdungen/SpaceBourne2-SplitControls]GitHub[/url] · [url=https://www.nexusmods.com/spacebourne2/mods/5]Nexus Mods[/url]
+[*][b]Silent Ops — realistic stealth[/b]: released: [url=https://github.com/hubertdungen/SpaceBourne2-SilentOps]GitHub[/url] · [url=https://www.nexusmods.com/spacebourne2/mods/6]Nexus Mods[/url]
+[*][b]Gear Without Levels — use gear regardless of level[/b]: released: [url=https://github.com/hubertdungen/SpaceBourne2-GearWithoutLevels]GitHub[/url] · [url=https://www.nexusmods.com/spacebourne2/mods/7]Nexus Mods[/url]
+[*][b]SB2 HOTAS — HOTAS, triple screens, head tracking[/b]: released: [url=https://github.com/hubertdungen/SpaceBourne2-HOTAS]GitHub[/url] · [url=https://www.nexusmods.com/spacebourne2/mods/8]Nexus Mods[/url]
+[*][b]Faction Power — your deeds earn your faction power[/b]: released: [url=https://github.com/hubertdungen/SpaceBourne2-FactionPower]GitHub[/url] · [url=https://www.nexusmods.com/spacebourne2/mods/9]Nexus Mods[/url]
+[*][b]Tactical Engineering — realistic deployable turrets[/b]: released: [url=https://github.com/hubertdungen/SpaceBourne2-TacticalEngineering]GitHub[/url] · [url=https://www.nexusmods.com/spacebourne2/mods/10]Nexus Mods[/url]
+[*][b]Ammo Discipline — realistic ammo limits and scavenging[/b]: released: [url=https://github.com/hubertdungen/SpaceBourne2-AmmoDiscipline]GitHub[/url] · [url=https://www.nexusmods.com/spacebourne2/mods/12]Nexus Mods[/url]
+[*][b]Ground Waypoints — planet markers on foot and on the hoverbike[/b]: released: [url=https://github.com/hubertdungen/SpaceBourne2-GroundWaypoints]GitHub[/url] · [url=https://www.nexusmods.com/spacebourne2/mods/13]Nexus Mods[/url]
+[*][b]Get Out of the Way — NPCs step aside naturally[/b]: released: [url=https://github.com/hubertdungen/SpaceBourne2-GetOutOfTheWay]GitHub[/url] · [url=https://www.nexusmods.com/spacebourne2/mods/14]Nexus Mods[/url]
+[*][b]Tactical First Person — play on foot in first person[/b]: released: [url=https://github.com/hubertdungen/SpaceBourne2-TacticalFirstPerson]GitHub[/url] · [url=https://www.nexusmods.com/spacebourne2/mods/15]Nexus Mods[/url]
+[*][b]Clear HUD — a reticle you can see, HUD colours (this mod)[/b]: released: [url=https://github.com/hubertdungen/SpaceBourne2-ClearHUD]GitHub[/url] · [url=https://www.nexusmods.com/spacebourne2/mods/16]Nexus Mods[/url]
+[/list]
+
+[line]
+[size=5][b]License[/b][/size]
+
+MIT. See [url=https://github.com/hubertdungen/SpaceBourne2-ClearHUD/blob/main/LICENSE]LICENSE[/url].
