@@ -32,8 +32,13 @@ return {
     -- The damage numbers when you hit a target on foot (the game's "Damage Text" setting
     -- only covers ships in space).
     HideDamageNumbers = false,
+    -- On foot, the bar at the top with the name, level and health of the enemy you hit.
+    HideTargetBar = false,
+    -- On foot, ALL the game's markers on the HUD: the red enemy markers and arrows, and also
+    -- mission, place and door markers (the game has one switch for all of them).
+    HideMarkersOnFoot = false,
 
-    -- Optional key that hides or shows the damage numbers while you play.
+    -- Optional key that hides or shows the damage numbers, target bar and markers on foot together.
     -- "" = no key. Shift can be added ("Shift+..."). The game's keys and the keys of the
     -- realism set's mods are refused.
     ToggleKey = "",

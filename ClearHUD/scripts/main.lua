@@ -12,7 +12,7 @@
   Nothing runs every frame except that one filter, and only for the HUD's call. See DESIGN.md.
 ]]
 
-local VERSION = "0.1.0"
+local VERSION = "0.1.1"
 
 -- Game names (the only things to fix after a game patch) -------------------------------------
 local CH = "/Game/Packes/CompShooterHUD/UI/Content/Crosshairs/"
@@ -24,6 +24,8 @@ local G = {
     -- I_Crosshair_Manager calls the outline copies must follow
     ChildEvents = { "CrosshairReaction", "Recoil", "ZoomIn", "ZoomOut" },
     DamageHolder = "/Game/Packes/CompShooterHUD/UI/Content/Q1_Damage/Damage_Holder.Damage_Holder_C",
+    -- the target panel at the top on foot: name, level and health line of the enemy you hit
+    TargetBar = "/Game/Packes/ProgressBars/Blueprints/Foot_Enemy_Progress.Foot_Enemy_Progress_C",
     WBL = "/Script/UMG.Default__WidgetBlueprintLibrary",
     -- HUD widgets that get the theme (main HUD, on-foot overlays); only those that have a Construct
     ThemeClasses = {
@@ -79,7 +81,7 @@ fill(cfg, {
     Reticle = { Enabled = true, Preset = "Green", Color = { 0.2, 1.0, 0.3 }, Opacity = 1.0, Size = 1.25,
         Outline = "Outline", OutlineColor = { 0, 0, 0 }, OutlineOpacity = 0.9, OutlineWidth = 1.5, Style = 0 },
     Theme = { Preset = "Game", Color = { 1.0, 0.45, 0.05 } },
-    HideDamageNumbers = false, ToggleKey = "", Debug = false,
+    HideDamageNumbers = false, HideTargetBar = false, HideMarkersOnFoot = false, ToggleKey = "", Debug = false,
 })
 verbose = cfg.Debug == true
 if verbose then local f = io.open(LOG, "w"); if f then f:close() end end
@@ -149,6 +151,10 @@ end
 -- State ------------------------------------------------------------------------------------
 local S = {
     hideNumbers = cfg.HideDamageNumbers == true,
+    hideBar = cfg.HideTargetBar == true,
+    hideMarkers = cfg.HideMarkersOnFoot == true,
+    forced = false,
+    fwd = {},
 }
 
 -- Helpers ----------------------------------------------------------------------------------
@@ -268,6 +274,7 @@ local function forward(ev, ctx, ...)
         local ok, v = pcall(function() return p:get() end)
         args[i] = ok and v or nil
     end
+    S.fwd[ev] = (S.fwd[ev] or 0) + 1
     forwarding = true
     for _, sh in ipairs(e.shadows) do
         if valid(sh) then
@@ -439,8 +446,13 @@ local function themeWidget(w, depth, st)
         if sc == nil then return end
         local rule = get(sc, "ColorUseRule")
         if rule ~= nil and rule ~= 0 then return end -- uses the parent's colour
-        local c = retint(get(sc, "SpecifiedColor"))
-        if c and pcall(function() w[setter](w, { SpecifiedColor = c, ColorUseRule = 0 }) end) then st.changed = st.changed + 1 end
+        local spec = get(sc, "SpecifiedColor")
+        local c = retint(spec)
+        if not c then return end
+        -- In place: a Lua table for this struct-in-a-struct reaches the game as zeros (0.1.0 bug).
+        if not pcall(function() spec.R = c.R; spec.G = c.G; spec.B = c.B end) then return end
+        if not pcall(function() w[setter](w, sc) end) then return end
+        st.changed = st.changed + 1
     end
     if cls == "Image" then
         linear("ColorAndOpacity", "SetColorAndOpacity")
@@ -495,6 +507,45 @@ local function onAddDamage(ctx)
     end
 end
 
+-- Target bar on foot ----------------------------------------------------------------------------
+-- Ship_MainWidget shows Foot_Enemy_Progress, then calls its Update on every hit: collapse it after.
+local function onTargetUpdate(ctx)
+    if not S.hideBar then return end
+    local w = ctx:get()
+    if valid(w) then pcall(function() w:SetVisibility(SLATE.Collapsed) end) end
+end
+
+-- Markers on foot ------------------------------------------------------------------------------------
+-- The game draws them on the HUD canvas (Q1Hud_C:Objectives) and skips all of them while its own flag
+-- "Any3d Widget On" is set (the game sets it while a 3D menu is open; only Q1Hud reads it). Set
+-- twice a second, only on foot, never a native hook. Enemy markers alone cannot be told apart.
+local HUD = { path = nil, addr = nil, nextFind = 0 }
+local function theHud(now)
+    if HUD.path then
+        local h = StaticFindObject(HUD.path)
+        if valid(h) and addr(h) == HUD.addr then return h end
+        HUD.path = nil
+    end
+    if now < HUD.nextFind then return nil end
+    HUD.nextFind = now + 10 -- FindFirstOf costs ~50 ms: at most every 10 s, only while looking
+    local h = FindFirstOf(G.HudShort)
+    if valid(h) then HUD.path, HUD.addr = fullPath(h), addr(h); return h end
+    return nil
+end
+local function markers(now)
+    if not (S.hideMarkers or S.forced) then return end
+    local h = theHud(now)
+    if not h then S.forced = false; return end
+    local onFoot = get(h, "CharacterOn?") == true
+    if S.hideMarkers and onFoot then
+        if get(h, "Any3d Widget On") ~= true then pcall(function() h["Any3d Widget On"] = true end) end
+        S.forced = true
+    elseif S.forced then
+        pcall(function() h["Any3d Widget On"] = false end)
+        S.forced = false
+    end
+end
+
 -- Hooks, registered when their classes are loaded (again if a class is reloaded) ----------------
 local targets = {}
 local function want(path, fn, onFirst)
@@ -534,6 +585,7 @@ if TH then
 end
 local bound -- set below
 local function numbersNeeded() return S.hideNumbers or bound ~= nil end
+local function barNeeded() return S.hideBar or bound ~= nil end
 
 local sentinel = { addr = nil, next = 0, wait = 1 }
 local lastQueue = 0
@@ -541,9 +593,16 @@ local function maintain()
     local now = os.clock()
     if verbose then -- debug only: toggle.txt in the mod folder flips hiding (tests without a keyboard)
         local f = io.open(DIR .. "toggle.txt", "r")
-        if f then f:close(); os.remove(DIR .. "toggle.txt"); S.hideNumbers = not S.hideNumbers; log("toggled by file: hidden=" .. tostring(S.hideNumbers)) end
+        if f then f:close(); os.remove(DIR .. "toggle.txt"); S.hideNumbers = not S.hideNumbers; S.hideBar = S.hideNumbers; S.hideMarkers = S.hideNumbers; log("toggled by file: hidden=" .. tostring(S.hideNumbers)) end
     end
     runQueue(now)
+    markers(now)
+    if verbose and now - (S.statAt or 0) >= 10 then
+        S.statAt = now
+        local parts = {}
+        for k2, v in pairs(S.fwd) do parts[#parts + 1] = k2 .. "=" .. v end
+        if #parts > 0 then log("reticle events forwarded to the outline: " .. table.concat(parts, " ")) end
+    end
     if #pendingChild > 0 then
         local list = pendingChild
         pendingChild = {}
@@ -616,9 +675,10 @@ local function bindToggle(spec)
     if bad then warn("ToggleKey '" .. spec .. "' refused (" .. bad .. "); no key bound"); return nil end
     local function toggle()
         ExecuteInGameThread(function()
-            S.hideNumbers = not S.hideNumbers
-            log("toggled: hidden=" .. tostring(S.hideNumbers))
-            notify(S.hideNumbers and "Clear HUD: damage numbers hidden" or "Clear HUD: damage numbers shown")
+            local hide = not (S.hideNumbers and S.hideBar and S.hideMarkers)
+            S.hideNumbers, S.hideBar, S.hideMarkers = hide, hide, hide
+            log("toggled: hidden=" .. tostring(hide))
+            notify(hide and "Clear HUD: markers, target bar and damage numbers hidden" or "Clear HUD: markers, target bar and damage numbers shown")
         end)
     end
     if shift then RegisterKeyBind(Key[key], { ModifierKey.SHIFT }, toggle) else RegisterKeyBind(Key[key], toggle) end
@@ -626,6 +686,7 @@ local function bindToggle(spec)
 end
 bound = bindToggle(cfg.ToggleKey)
 
+if barNeeded() then want(G.TargetBar, function(cp) hook(cp .. ":Update", guarded("target bar", onTargetUpdate)) end) end
 if numbersNeeded() then want(G.DamageHolder, function(cp) hook(cp .. ":AddDamage", guarded("numbers", onAddDamage)) end) end
 LoopAsync(500, function()
     ExecuteInGameThread(function()
@@ -635,7 +696,7 @@ LoopAsync(500, function()
     return false
 end)
 
-warn(string.format("=== Clear HUD %s loaded: reticle %s, theme %s, damage numbers %s, key %s ===", VERSION,
+warn(string.format("=== Clear HUD %s loaded: reticle %s, theme %s, damage numbers %s, target bar %s, markers on foot %s, key %s ===", VERSION,
     RET.on and (tostring(cfg.Reticle.Preset) .. " x" .. RET.size .. " " .. tostring(cfg.Reticle.Outline)) or "off",
     TH and tostring(cfg.Theme.Preset) or "off",
-    S.hideNumbers and "hidden" or "shown", bound or "none"))
+    S.hideNumbers and "hidden" or "shown", S.hideBar and "hidden" or "shown", S.hideMarkers and "hidden" or "shown", bound or "none"))
