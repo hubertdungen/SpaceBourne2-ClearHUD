@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.1 (2026-11-06)
+
+- Fixed: with a colour theme, part of the HUD text disappeared (missions, squad, weapon, ammo).
+  The text colour is now changed in place, so it keeps its value.
+- Fixed: two reticles on foot. The game's own small ring in the middle is hidden on foot while
+  Clear HUD's reticle is on (`Reticle.HideGameRing`); it stays in ships.
+- New: `HideTargetBar` hides the enemy bar at the top on foot; `HideMarkersOnFoot` hides all the
+  game's markers on foot, the red enemy markers and arrows included, with the game's own switch.
+- The optional key now flips the damage numbers, the target bar and the markers together.
+
 ## 0.1.0 (2026-11-01)
 
 First release.

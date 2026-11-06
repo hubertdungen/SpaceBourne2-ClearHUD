@@ -20,6 +20,9 @@ return {
         -- Shape: 0 = the weapon's own (the game uses 6 for hand weapons), or 1 to 11
         -- for the game's 11 reticles
         Style = 0,
+        -- On foot, hide the game's own small dashed ring in the middle of the screen, so only one
+        -- reticle shows (it stays in ships).
+        HideGameRing = true,
     },
 
     -- HUD colour. Changes the game's cyan HUD colour; other colours (health, warnings) stay.

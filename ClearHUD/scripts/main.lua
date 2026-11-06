@@ -19,6 +19,9 @@ local CH = "/Game/Packes/CompShooterHUD/UI/Content/Crosshairs/"
 local G = {
     HudClass = "/Game/1Data/Q1Hud.Q1Hud_C",
     HudShort = "Q1Hud_C",
+    -- the game's own small dashed ring in the middle of the screen (Ship_MainWidget, MI_AC_Circle4),
+    -- always on; with Clear HUD's reticle on foot it made a double reticle
+    Ring = "Image_341",
     CrosshairBase = CH .. "WB_CrosshairBase.WB_CrosshairBase_C",
     CrosshairFmt = CH .. "Crosshairs/WB_Crosshair_%02d.WB_Crosshair_%02d_C",
     -- I_Crosshair_Manager calls the outline copies must follow
@@ -79,7 +82,8 @@ end
 fill(cfg, {
     Enabled = true,
     Reticle = { Enabled = true, Preset = "Green", Color = { 0.2, 1.0, 0.3 }, Opacity = 1.0, Size = 1.25,
-        Outline = "Outline", OutlineColor = { 0, 0, 0 }, OutlineOpacity = 0.9, OutlineWidth = 1.5, Style = 0 },
+        Outline = "Outline", OutlineColor = { 0, 0, 0 }, OutlineOpacity = 0.9, OutlineWidth = 1.5, Style = 0,
+        HideGameRing = true },
     Theme = { Preset = "Game", Color = { 1.0, 0.45, 0.05 } },
     HideDamageNumbers = false, HideTargetBar = false, HideMarkersOnFoot = false, ToggleKey = "", Debug = false,
 })
@@ -113,6 +117,7 @@ local THEME_PRESETS = {
 
 -- Reticle settings
 local RET = { on = cfg.Reticle.Enabled ~= false, offsets = {} }
+RET.hideRing = RET.on and cfg.Reticle.HideGameRing ~= false
 do
     local r = cfg.Reticle
     local p = tostring(r.Preset or "Green"):lower()
@@ -532,11 +537,31 @@ local function theHud(now)
     if valid(h) then HUD.path, HUD.addr = fullPath(h), addr(h); return h end
     return nil
 end
+local RING = { hidden = false }
+local function ring(h, onFoot)
+    local smw = get(h, "Ship Main Widget")
+    local img = valid(smw) and get(smw, G.Ring) or nil
+    if not valid(img) then return end
+    local want = onFoot and RET.hideRing
+    if want == RING.hidden then return end
+    if want then
+        local ok, v = pcall(function() return img:GetVisibility() end)
+        RING.vis = (ok and type(v) == "number" and v ~= SLATE.Hidden and v ~= SLATE.Collapsed) and v or SLATE.HitTestInvisible
+        pcall(function() img:SetVisibility(SLATE.Hidden) end)
+    else
+        pcall(function() img:SetVisibility(RING.vis or SLATE.HitTestInvisible) end)
+    end
+    RING.hidden = want
+    log("game's centre ring " .. (want and "hidden (on foot)" or "shown"))
+end
+
 local function markers(now)
-    if not (S.hideMarkers or S.forced) then return end
+    if not (S.hideMarkers or S.forced or RET.hideRing) then return end
     local h = theHud(now)
-    if not h then S.forced = false; return end
+    if not h then S.forced = false; RING.hidden = false; return end
     local onFoot = get(h, "CharacterOn?") == true
+    if RET.hideRing then pcall(ring, h, onFoot) end
+    if not (S.hideMarkers or S.forced) then return end
     if S.hideMarkers and onFoot then
         if get(h, "Any3d Widget On") ~= true then pcall(function() h["Any3d Widget On"] = true end) end
         S.forced = true

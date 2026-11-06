@@ -6,7 +6,7 @@ On foot, SpaceBourne 2's reticle is thin, light grey and has no outline: on snow
 sky or a busy station you lose it. Clear HUD gives it a strong colour, a dark outline and a bigger
 size, lets you change the HUD's cyan for another colour, and can hide the damage numbers on foot.
 
-Version 0.1.0 · [Nexus Mods page](https://www.nexusmods.com/spacebourne2/mods/16) · UE4SS Lua mod · works alone or with the rest of the
+Version 0.1.1 · [Nexus Mods page](https://www.nexusmods.com/spacebourne2/mods/16) · UE4SS Lua mod · works alone or with the rest of the
 realism set (see below). Asked for by players on the DBK Games Discord.
 
 ## What it does
@@ -18,8 +18,11 @@ realism set (see below). Asked for by players on the DBK Games Discord.
   drop shadow, and any of the game's 11 reticle shapes.
 - **HUD colour themes:** amber, green, red, blue, purple or white instead of the game's cyan, or
   your own colour. Health, warnings and other colours stay as they are. Off by default.
-- **Damage numbers on foot:** hide them in the settings (the game's own "Damage Text" option only
-  covers ships in space), with an optional key to flip them while you play.
+- **One reticle:** on foot the game's own small ring in the middle is hidden, so it doesn't sit on
+  top of Clear HUD's reticle.
+- **A cleaner screen if you want it:** hide the damage numbers on foot (the game's own "Damage
+  Text" option only covers ships in space), the enemy bar at the top, and the markers on foot, in
+  the settings, with an optional key to flip them while you play.
 - **Light:** applied when the game builds the reticle or the HUD, never every frame.
 - **On by default.** Install it and the reticle is clear.
 
@@ -60,8 +63,8 @@ Uninstall: delete `SB2\Binaries\Win64\Mods\ClearHUD`. The mod never writes to yo
 
 ## Controls
 
-None needed. Optional: set `ToggleKey` to hide or show the damage numbers while you play; a short
-message confirms each press.
+None needed. Optional: set `ToggleKey` to hide or show the damage numbers, the target bar and the
+markers on foot while you play; a short message confirms each press.
 
 ## Settings
 
@@ -75,10 +78,15 @@ Edit `Mods\ClearHUD\scripts\config.lua`, then restart the game. Every line is op
   `OutlineWidth` (1.5 pixels).
 - `Reticle.Style`: `0` keeps the weapon's reticle (shape 6); `1` to `11` picks one of the game's
   shapes.
+- `Reticle.HideGameRing`: hide the game's small ring in the middle on foot (`true`).
 - `Reticle.Enabled`: `false` leaves the reticle as the game makes it.
 - `Theme.Preset`: `"Game"` (cyan, no change), `"Amber"`, `"Green"`, `"Red"`, `"Blue"`, `"Purple"`,
   `"White"` or `"Custom"` (uses `Theme.Color`).
 - `HideDamageNumbers`: hide the damage numbers on foot (`false`).
+- `HideTargetBar`: hide the bar at the top with the name, level and health of the enemy you hit
+  (`false`).
+- `HideMarkersOnFoot`: hide **all** the game's markers on foot: the red enemy markers and arrows,
+  and also mission, place and door markers (`false`). The game has one switch for all of them.
 - `ToggleKey`: none by default (`""`). Any key the game and the realism set don't use, with or
   without `Shift+`; the others are refused.
 
@@ -95,6 +103,12 @@ cyan once, when the HUD is built. Nothing runs every frame. Details:
 ## Status and known limits
 
 <!-- nexus:skip -->
+0.1.1, tested in game on 2026-11-06 (same save, all set mods incl. Tactical First Person and Bigger
+Armies): with the Amber theme all HUD text stays visible (missions, squad, weapon, ammo); markers on
+foot hidden and shown again with the key; saves untouched. Not yet seen in game: the centre ring
+hidden in third person and the target bar hidden on a hit (the second test launch closed during
+the load, with the display off).
+
 Tested in game on 2026-11-01 (station, pretest save, with HTR, Split Controls, Silent Ops, Gear
 Without Levels, Faction Power, Tactical Engineering, Ammo Discipline, Get Out of the Way and Ground
 Waypoints installed):
@@ -113,8 +127,8 @@ removed and the crash did not come back.
 Known limits:
 
 - **On foot only** for the reticle. Ship reticles are the game's own.
-- **Enemy markers** (the red markers over enemies on foot) cannot be hidden: the game has no switch
-  for them, and the only way found crashed the game, so it is not in this version.
+- **Enemy markers alone** cannot be hidden: the game draws them with the other markers, behind one
+  switch. `HideMarkersOnFoot` hides them all (Ground Waypoints' markers too).
 - **Theme**: parts the game draws straight on screen (markers, ship HUD lines) and icons whose
   colour is baked into the picture keep their colours. Panels the game rebuilds while you play
   (for example new list entries) may come back cyan until the next load. With a theme on, the

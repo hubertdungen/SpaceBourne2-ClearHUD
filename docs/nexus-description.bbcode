@@ -4,7 +4,7 @@
 
 On foot, SpaceBourne 2's reticle is thin, light grey and has no outline: on snow, sand, a bright sky or a busy station you lose it. Clear HUD gives it a strong colour, a dark outline and a bigger size, lets you change the HUD's cyan for another colour, and can hide the damage numbers on foot.
 
-Version 0.1.0 · [url=https://www.nexusmods.com/spacebourne2/mods/16]Nexus Mods page[/url] · UE4SS Lua mod · works alone or with the rest of the realism set (see below). Asked for by players on the DBK Games Discord.
+Version 0.1.1 · [url=https://www.nexusmods.com/spacebourne2/mods/16]Nexus Mods page[/url] · UE4SS Lua mod · works alone or with the rest of the realism set (see below). Asked for by players on the DBK Games Discord.
 
 [line]
 [size=5][b]What it does[/b][/size]
@@ -13,7 +13,8 @@ Version 0.1.0 · [url=https://www.nexusmods.com/spacebourne2/mods/16]Nexus Mods 
 [*][b]A reticle you can see:[/b] green by default, full opacity, 25% bigger, with a dark outline that keeps it readable on any background. It still reacts to moving, firing and aiming like the game's own.
 [*][b]Your colour and shape:[/b] seven colour presets or your own colour, opacity, size, outline or drop shadow, and any of the game's 11 reticle shapes.
 [*][b]HUD colour themes:[/b] amber, green, red, blue, purple or white instead of the game's cyan, or your own colour. Health, warnings and other colours stay as they are. Off by default.
-[*][b]Damage numbers on foot:[/b] hide them in the settings (the game's own "Damage Text" option only covers ships in space), with an optional key to flip them while you play.
+[*][b]One reticle:[/b] on foot the game's own small ring in the middle is hidden, so it doesn't sit on top of Clear HUD's reticle.
+[*][b]A cleaner screen if you want it:[/b] hide the damage numbers on foot (the game's own "Damage Text" option only covers ships in space), the enemy bar at the top, and the markers on foot, in the settings, with an optional key to flip them while you play.
 [*][b]Light:[/b] applied when the game builds the reticle or the HUD, never every frame.
 [*][b]On by default.[/b] Install it and the reticle is clear.
 [/list]
@@ -60,7 +61,7 @@ Uninstall: delete SB2\Binaries\Win64\Mods\ClearHUD. The mod never writes to your
 [line]
 [size=5][b]Controls[/b][/size]
 
-None needed. Optional: set ToggleKey to hide or show the damage numbers while you play; a short message confirms each press.
+None needed. Optional: set ToggleKey to hide or show the damage numbers, the target bar and the markers on foot while you play; a short message confirms each press.
 
 [line]
 [size=5][b]Settings[/b][/size]
@@ -73,9 +74,12 @@ Edit Mods\ClearHUD\scripts\config.lua, then restart the game. Every line is opti
 [*]Reticle.Opacity (1.0), Reticle.Size (1.25; 1.0 is the game's size).
 [*]Reticle.Outline: "Outline", "Shadow" or "Off"; OutlineColor, OutlineOpacity (0.9), OutlineWidth (1.5 pixels).
 [*]Reticle.Style: 0 keeps the weapon's reticle (shape 6); 1 to 11 picks one of the game's shapes.
+[*]Reticle.HideGameRing: hide the game's small ring in the middle on foot (true).
 [*]Reticle.Enabled: false leaves the reticle as the game makes it.
 [*]Theme.Preset: "Game" (cyan, no change), "Amber", "Green", "Red", "Blue", "Purple", "White" or "Custom" (uses Theme.Color).
 [*]HideDamageNumbers: hide the damage numbers on foot (false).
+[*]HideTargetBar: hide the bar at the top with the name, level and health of the enemy you hit (false).
+[*]HideMarkersOnFoot: hide [b]all[/b] the game's markers on foot: the red enemy markers and arrows, and also mission, place and door markers (false). The game has one switch for all of them.
 [*]ToggleKey: none by default (""). Any key the game and the realism set don't use, with or without Shift+; the others are refused.
 [/list]
 
@@ -93,7 +97,7 @@ Known limits:
 
 [list]
 [*][b]On foot only[/b] for the reticle. Ship reticles are the game's own.
-[*][b]Enemy markers[/b] (the red markers over enemies on foot) cannot be hidden: the game has no switch for them, and the only way found crashed the game, so it is not in this version.
+[*][b]Enemy markers alone[/b] cannot be hidden: the game draws them with the other markers, behind one switch. HideMarkersOnFoot hides them all (Ground Waypoints' markers too).
 [*][b]Theme[/b]: parts the game draws straight on screen (markers, ship HUD lines) and icons whose colour is baked into the picture keep their colours. Panels the game rebuilds while you play (for example new list entries) may come back cyan until the next load. With a theme on, the first load of a game pauses about half a second longer.
 [*][b]Tactical First Person[/b] hides the reticle in first person by default; set its Crosshair to "Game" to keep Clear HUD's reticle there.
 [/list]

@@ -73,7 +73,17 @@ Nothing is looked up or drawn every frame.
   content colour), ProgressBar fill and user widget colour in hue 165–215 with saturation ≥ 0.25
   is converted: the cyan maps exactly to the theme colour, darker and paler variants keep their
   relation to it. Other colours are left alone.
-- **Enemy markers: not done.** A hook on the native `GameplayStatics:GetAllActorsOfClassWithTag`
+- **The game's centre ring**: `Ship_MainWidget.Image_341` (40 px, material `MI_AC_Circle4`, a
+  dashed ring) is always visible and no Blueprint touches it. On foot (`Q1Hud."CharacterOn?"`) and
+  with the reticle on, it is set Hidden from the 0.5 s loop and given back its visibility in ships.
+- **Target bar**: `Ship_MainWidget` shows `Foot_Enemy_Progress_1286` and then calls its `Update`
+  on every hit; a post-hook of `Foot_Enemy_Progress_C:Update` collapses it again.
+- **Markers on foot (0.1.1)**: `Q1Hud_C:Objectives` returns at once while `Q1Hud."Any3d Widget On"`
+  is true (the game sets it while a 3D menu is open; only `Q1Hud` reads it). The 0.5 s loop sets it
+  on foot and clears it once when leaving foot or when markers are shown again. No native hook. It
+  hides every on-foot marker (enemies, objectives, doors, places); enemies alone cannot be singled
+  out without a hook on the per-frame list.
+- **Enemy markers via a native hook: not done.** A hook on the native `GameplayStatics:GetAllActorsOfClassWithTag`
   (only for the HUD's call, setting the tag to `None`) crashed the game at the main menu in UE4SS
   3.0.1: "Tried to execute UFunction::FuncPtr hook but there was no function map entry for
   UFunction None ... Executing ProcessInternal instead", then an access violation. Native function
@@ -100,6 +110,13 @@ Nothing is looked up or drawn every frame.
 - **HTR, Silent Ops**: same warning line and the shared `SB2R_CantVolume` value for the muted alarm.
 - **Ground Waypoints** draws on the HUD canvas and is not touched.
 - Other mods that change `B_Crosshair` or `OV_Crosshair` would conflict; none in the set does.
+
+## 3b. Theme text (0.1.1)
+
+`UTextBlock::SetColorAndOpacity(FSlateColor)` called with a Lua table `{ SpecifiedColor = {...},
+ColorUseRule = 0 }` arrived as zeros in UE4SS 3.0.1 (a struct inside a struct), so every themed text
+became transparent. 0.1.1 writes R, G, B into the widget's own `ColorAndOpacity.SpecifiedColor` and
+passes that struct back to the setter. Verified in game: all HUD text visible with the Amber theme.
 
 ## 4. Names to check after a game patch
 
