@@ -9,10 +9,12 @@
     after each one is built (post-hook of its Construct).
   * Damage numbers: post-hook of Damage_Holder_C:AddDamage collapses the holder.
 
-  Nothing runs every frame except that one filter, and only for the HUD's call. See DESIGN.md.
+  Nothing runs every frame except that one filter, and only for the HUD's call, and the timer
+  check of chud/gametick.lua on the game's own ticks (no UE4SS background loops since 0.1.3:
+  they could crash UE4SS when several mods used them at once). See DESIGN.md.
 ]]
 
-local VERSION = "0.1.2"
+local VERSION = "0.1.3"
 
 -- Game names (the only things to fix after a game patch) -------------------------------------
 local CH = "/Game/Packes/CompShooterHUD/UI/Content/Crosshairs/"
@@ -67,6 +69,10 @@ local function write(prefix, ...)
 end
 local function log(...) if verbose then write("", ...) end end
 local function warn(...) print("[ClearHUD] " .. write("WARN ", ...) .. "\n") end
+-- Timed work on the game thread (gametick.lua, the set's shared file): pumped by the player and
+-- ship ticks and by this mod's own HUD hooks. No LoopAsync / ExecuteWithDelay (UE4SS crash).
+local GT = require("chud.gametick")
+GT.log = function(msg) warn(msg) end
 
 -- Settings ---------------------------------------------------------------------------------
 local okCfg, cfg = pcall(require, "config")
@@ -238,12 +244,10 @@ local function muteAlarm()
     end
     pcall(function() snd.Volume = 0.0 end)
     unmuteAt = os.clock() + 2.0
-    ExecuteWithDelay(2100, function()
-        ExecuteInGameThread(function()
-            if os.clock() < unmuteAt then return end
-            local s = StaticFindObject(G.Cant)
-            if valid(s) and cantVolume then pcall(function() s.Volume = cantVolume end) end
-        end)
+    GT.after(2.1, function(now)
+        if now < unmuteAt then return end
+        local s = StaticFindObject(G.Cant)
+        if valid(s) and cantVolume then pcall(function() s.Volume = cantVolume end) end
     end)
 end
 local function notify(text)
@@ -747,6 +751,7 @@ end
 local function guarded(tag, fn)
     local errors = 0
     return function(...)
+        GT.pump("hud") -- also a game-thread tick for the timed work (costs nothing when nothing is due)
         if errors >= 25 then return end
         local ok, err = pcall(fn, ...)
         if not ok then
@@ -881,12 +886,16 @@ end
 bound = bindToggle(cfg.ToggleKey)
 
 if numbersNeeded() or barNeeded() then want(G.DamageHolder, function(cp) hook(cp .. ":AddDamage", guarded("numbers", onAddDamage)) end) end
-LoopAsync(500, function()
-    ExecuteInGameThread(function()
-        local ok, err = pcall(maintain)
-        if not ok then warn("maintain: " .. tostring(err)) end
-    end)
-    return false
+-- Twice a second on the game thread (until 0.1.2: LoopAsync + ExecuteInGameThread, which from
+-- UE4SS's async thread writes a map all mods share without a lock: two mods at once crashed the
+-- game, UE4SS.dll+0x87c104). Pumped on foot, in ships and by the HUD hooks; started after each
+-- load or possession (ClientRestart).
+GT.drive(GT.FOOT_TICK, "foot")
+GT.drive(GT.SHIP_TICK, "ship")
+GT.boot()
+GT.every(0.5, function()
+    local ok, err = pcall(maintain)
+    if not ok then warn("maintain: " .. tostring(err)) end
 end)
 
 warn(string.format("=== Clear HUD %s loaded: reticle %s, theme %s, damage numbers %s, target bar %s, markers on foot %s, key %s ===", VERSION,
