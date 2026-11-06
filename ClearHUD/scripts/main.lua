@@ -486,15 +486,19 @@ local function themeWidget(w, depth, st)
         end
     end
 end
+local THEMED = {} -- addresses of the widgets themed
 local function applyTheme(w)
+    local a = addr(w)
+    if a then THEMED[a] = true end
     local t0 = os.clock()
     local st = { widgets = 0, changed = 0 }
     themeWidget(w, 0, st)
     log(string.format("theme: %s, %d widgets, %d colours changed, %.1f ms", className(w), st.widgets, st.changed, (os.clock() - t0) * 1000))
 end
 local function onThemeConstruct(ctx)
-    local w = ctx:get()
-    if valid(w) then later(w, 0.5, applyTheme) end
+    -- ctx:get() failed once during a level load (2026-11-06); the 0.5 s loop then themes the HUD
+    local ok, w = pcall(function() return ctx:get() end)
+    if ok and valid(w) then later(w, 0.5, applyTheme) end
 end
 
 -- Damage numbers and the target bar on foot ---------------------------------------------------------
@@ -637,8 +641,17 @@ local function ring(smw, onFoot)
     log("game's centre ring " .. (want and "hidden (on foot)" or "shown"))
 end
 
+local function themeMissed(smw)
+    local a = SMW.addr
+    if not a or THEMED[a] then return end
+    for _, q in ipairs(queue) do if q.addr == a then return end end -- already waiting
+    THEMED[a] = true -- once per widget
+    log("theme: the Construct hook missed this HUD widget; theming it now")
+    later(smw, 0.2, applyTheme)
+end
+
 local function markers(now)
-    local needSmw = RET.hideRing or S.hideBar
+    local needSmw = RET.hideRing or S.hideBar or TH ~= nil
     if not (S.hideMarkers or S.forced or needSmw) then return end
     local h = theHud(now)
     if not h then S.forced = false; RING.hidden = false; return end
@@ -648,6 +661,7 @@ local function markers(now)
         if smw then
             if RET.hideRing then pcall(ring, smw, onFoot) end
             if S.hideBar then pcall(barCheck, smw) end
+            if TH then pcall(themeMissed, smw) end
         end
     end
     if not (S.hideMarkers or S.forced) then return end

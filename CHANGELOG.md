@@ -10,6 +10,8 @@
   bar's own update can't be hooked); `HideMarkersOnFoot` hides all the
   game's markers on foot, the red enemy markers and arrows included, with the game's own switch.
 - The optional key now flips the damage numbers, the target bar and the markers together.
+- Theme: if the HUD's Construct hook misses (seen once in five test loads), the half-second check
+  themes the HUD instead.
 
 ## 0.1.0 (2026-11-01)
 

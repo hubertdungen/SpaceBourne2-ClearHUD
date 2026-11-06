@@ -105,10 +105,12 @@ cyan once, when the HUD is built. Nothing runs every frame. Details:
 <!-- nexus:skip -->
 0.1.1, tested in game on 2026-11-06 (same save, all set mods incl. Tactical First Person and Bigger
 Armies): with the Amber theme all HUD text stays visible (missions, squad, weapon, ammo); markers on
-foot hidden and shown again with the key; damage numbers hidden on a hit; the game's centre ring
-gone on foot, so only one reticle; saves untouched. Not yet seen in game: the target bar hidden on a
-hit (it was rewritten after the first way failed, see DESIGN.md; in the last test no shot landed
-before the enemies died).
+foot hidden and shown again (the squad marker goes, the flag the game reads is set); damage numbers
+hidden on a hit; the game's centre ring gone on foot, so only one reticle; the target bar collapsed
+by the mod as soon as a damage number is added to it; frame time 10.2 ms on average over 29 s on
+foot with enemies; saves untouched. In one of five test loads the theme was not applied (a hook
+error while the level loaded); 0.1.1 now themes the HUD from its half-second check when that
+happens. That fallback is not yet seen in game.
 
 Tested in game on 2026-11-01 (station, pretest save, with HTR, Split Controls, Silent Ops, Gear
 Without Levels, Faction Power, Tactical Engineering, Ammo Discipline, Get Out of the Way and Ground

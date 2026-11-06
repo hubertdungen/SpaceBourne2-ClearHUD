@@ -128,6 +128,16 @@ ColorUseRule = 0 }` arrived as zeros in UE4SS 3.0.1 (a struct inside a struct), 
 became transparent. 0.1.1 writes R, G, B into the widget's own `ColorAndOpacity.SpecifiedColor` and
 passes that struct back to the setter. Verified in game: all HUD text visible with the Amber theme.
 
+In one of five test loads (2026-11-06) `ctx:get()` in the `Ship_MainWidget_C:Construct` post-hook
+threw while the level loaded, and the theme was never applied. 0.1.1 wraps it, records every themed
+widget by address, and the 0.5 s loop themes the on-screen HUD widget once if it is neither themed nor
+waiting in the queue (the same ~0.75 s walk as at load, so a single short pause in that rare case).
+
+Test of 2026-11-06 (launch 5): the direct bar check (show the bar, add a number to its
+`Damage_Holder`) read Visible before and Collapsed after; frame time 10.2 ms on average over 29 s
+(2847 frames) with 5 pauses of 109-123 ms, which line up with the test's own dev-console probes
+(each runs `FindAllOf` and `FindFirstOf`); the mod's 0.5 s check only re-reads cached objects.
+
 ## 4. Names to check after a game patch
 
 `G` at the top of `scripts/main.lua`: the crosshair base and type paths, `Damage_Holder_C`,
