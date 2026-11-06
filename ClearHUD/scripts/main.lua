@@ -69,8 +69,8 @@ local function write(prefix, ...)
 end
 local function log(...) if verbose then write("", ...) end end
 local function warn(...) print("[ClearHUD] " .. write("WARN ", ...) .. "\n") end
--- Timed work on the game thread (gametick.lua, the set's shared file): pumped by the player and
--- ship ticks and by this mod's own HUD hooks. No LoopAsync / ExecuteWithDelay (UE4SS crash).
+-- Timed work on the game thread (gametick.lua, the set's shared file): pumped by the HUD's drawing
+-- and by this mod's own HUD hooks. No LoopAsync / ExecuteWithDelay (UE4SS crash).
 local GT = require("chud.gametick")
 GT.log = function(msg) warn(msg) end
 
@@ -888,10 +888,9 @@ bound = bindToggle(cfg.ToggleKey)
 if numbersNeeded() or barNeeded() then want(G.DamageHolder, function(cp) hook(cp .. ":AddDamage", guarded("numbers", onAddDamage)) end) end
 -- Twice a second on the game thread (until 0.1.2: LoopAsync + ExecuteInGameThread, which from
 -- UE4SS's async thread writes a map all mods share without a lock: two mods at once crashed the
--- game, UE4SS.dll+0x87c104). Pumped on foot, in ships and by the HUD hooks; started after each
+-- game, UE4SS.dll+0x87c104). Pumped by the HUD's drawing and the HUD hooks; started after each
 -- load or possession (ClientRestart).
-GT.drive(GT.FOOT_TICK, "foot")
-GT.drive(GT.SHIP_TICK, "ship")
+GT.drive(GT.HUD_TICK, "hud") -- the player's HUD drawing: once per frame, on foot and in ships
 GT.boot()
 GT.every(0.5, function()
     local ok, err = pcall(maintain)

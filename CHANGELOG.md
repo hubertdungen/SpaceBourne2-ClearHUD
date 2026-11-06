@@ -6,7 +6,7 @@
   play). Background loops (LoopAsync, ExecuteWithDelay) run on their own threads without UE4SS's
   lock, and two mods calling ExecuteInGameThread from there at the same moment broke a map UE4SS
   shares between all mods. The twice-a-second upkeep and the alarm unmute now run on the game
-  thread, from the player's and the ships' own ticks and the HUD hooks (new `chud\gametick.lua`,
+  thread, from the HUD's own drawing and the HUD hooks (new `chud\gametick.lua`,
   the same file in every mod of the set). The crash is gone only once every mod of the set has
   this change.
 
