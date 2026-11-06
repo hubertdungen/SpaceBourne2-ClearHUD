@@ -420,6 +420,14 @@ local function onCreateChild(ctx)
     if not okB then RET.retry = true; return end
     if valid(base) then applyReticle(base) end
 end
+local function crosshairChild(base)
+    local ok, c = pcall(function() return base:GetCrosshairChild() end)
+    if ok and valid(c) then return c end
+    local ov = get(base, "OV_Crosshair")
+    local ok2, c2 = pcall(function() return ov:GetChildAt(0) end)
+    if ok2 and valid(c2) then return c2 end
+    return nil
+end
 local function reticleRetry()
     if not RET.retry then return end
     RET.retry = false
@@ -427,11 +435,19 @@ local function reticleRetry()
     if not valid(base) then return end
     log("reticle: the hook missed the crosshair; applying the reticle now")
     if RET.style then
+        -- The new crosshair starts visible: if the current one is hidden (Tactical First Person hides
+        -- it in first person and while aiming), the new one is hidden the same way at once.
+        local okV, vis = pcall(function() return crosshairChild(base):GetVisibility() end)
+        local hidden = okV and (vis == SLATE.Hidden or vis == SLATE.Collapsed)
         inAdd = true
         pcall(function() base:AddCrosshair(RET.style - 1, RET.color or { R = 0.9, G = 0.9, B = 0.9, A = 1 }, 1.0) end)
         inAdd = false
+        if hidden then
+            local c = crosshairChild(base)
+            if c then pcall(function() c:SetVisibility(vis) end) end
+        end
     end
-    applyReticle(base)
+    applyReticle(base) -- colour, scale and outline only: the crosshair's own visibility is not touched
 end
 
 -- Theme --------------------------------------------------------------------------------------

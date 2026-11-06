@@ -6,7 +6,8 @@
   number. While `HideTargetBar` is on, the bar is now kept invisible (opacity 0); shown again, it
   gets its opacity back.
 - Fixed: rarely (once in eight test loads) the reticle was not applied when a weapon was drawn. The
-  half-second check now applies it when the game's hook misses it.
+  half-second check now applies it when the game's hook misses it, and keeps it hidden if Tactical
+  First Person hides it (first person, aiming).
 
 ## 0.1.1 (2026-11-06)
 

@@ -67,7 +67,9 @@ Nothing is looked up or drawn every frame.
   does it in first person) hides them too, and they go away with it. The child-class hooks are
   registered from the 0.5 s loop, never from inside another hook. If `ctx:get()` throws in one of
   these hooks (seen once at a weapon draw, 2026-11-06), the 0.5 s loop finds the crosshair once
-  (`FindFirstOf`), adds the chosen shape and applies the reticle (0.1.2).
+  (`FindFirstOf`), adds the chosen shape and applies the reticle (0.1.2). The new crosshair child
+  gets the old one's visibility when that was Hidden or Collapsed (Tactical First Person hides the
+  child in first person and while aiming); applying the reticle never changes the child's visibility.
 - **Theme**: post-hook of `Construct` on `Ship_MainWidget_C` (the on-foot and ship HUD;
   `Character_Main_Widget_C` and `Misactor_Main_Widget_C` are listed but do not override
   `Construct`); 0.5 s later (the widget is re-found by path first) one walk of its tree,
