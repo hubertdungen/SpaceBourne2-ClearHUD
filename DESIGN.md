@@ -77,10 +77,11 @@ Nothing is looked up or drawn every frame.
   `Ship_MainWidget_C` on screen (`IsInViewport`) is found with `FindAllOf`, at most every 5 s while
   missing, then cached by path and address like the HUD.
 - **The game's centre ring**: `Ship_MainWidget.Image_341` (40 px, material `MI_AC_Circle4`, a
-  dashed ring) is always visible and no Blueprint touches it. It is not a Blueprint variable, so it
-  is not a property: it is found once per HUD widget at `<widget path>.WidgetTree.Image_341`
-  (a walk of the tree by name as a fallback). On foot (`Q1Hud."CharacterOn?"`) and with the reticle
-  on, it is set Hidden from the 0.5 s loop and given back its visibility in ships.
+  dashed ring) is always visible and no Blueprint touches it. It is read once per HUD widget as the
+  property `Image_341` (seen in game), with `<widget path>.WidgetTree.Image_341` and a walk of the
+  tree by name as fallbacks. On foot (`Q1Hud."CharacterOn?"`) and with the reticle on, it is set
+  Hidden from the 0.5 s loop and given back its visibility in ships. Seen in game on 2026-11-06:
+  ring found, hidden on foot, gone from the screen.
 - **Target bar**: `Ship_MainWidget:UpdateEnemyHP` (called by the on-foot AI on a hit that doesn't
   kill) shows `Foot_Enemy_Progress_1286` and calls its `Update`, which adds the number to the bar's
   `Damage_Holder`. `Update` cannot be hooked: it takes a Text, and UE4SS 3.0.1 logs

@@ -579,8 +579,8 @@ local function barCheck(smw)
     end
 end
 
--- The ring is not a Blueprint variable, so it is not a property of the HUD widget: find it once per
--- HUD widget by its path in the widget tree (a walk of the tree by name as a fallback).
+-- The ring, found once per HUD widget: as a property (works in game), else by its path in the
+-- widget tree, else by a walk of the tree by name.
 local function findNamed(w, name, depth)
     if not valid(w) or depth > 12 then return nil end
     local ok, n = pcall(function() return w:GetFName():ToString() end)
