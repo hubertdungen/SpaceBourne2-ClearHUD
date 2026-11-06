@@ -73,11 +73,20 @@ Nothing is looked up or drawn every frame.
   content colour), ProgressBar fill and user widget colour in hue 165–215 with saturation ≥ 0.25
   is converted: the cyan maps exactly to the theme colour, darker and paler variants keep their
   relation to it. Other colours are left alone.
+- **The HUD widget**: `Q1Hud."Ship Main Widget"` is empty in game (seen 2026-11-06), so the
+  `Ship_MainWidget_C` on screen (`IsInViewport`) is found with `FindAllOf`, at most every 5 s while
+  missing, then cached by path and address like the HUD.
 - **The game's centre ring**: `Ship_MainWidget.Image_341` (40 px, material `MI_AC_Circle4`, a
-  dashed ring) is always visible and no Blueprint touches it. On foot (`Q1Hud."CharacterOn?"`) and
-  with the reticle on, it is set Hidden from the 0.5 s loop and given back its visibility in ships.
-- **Target bar**: `Ship_MainWidget` shows `Foot_Enemy_Progress_1286` and then calls its `Update`
-  on every hit; a post-hook of `Foot_Enemy_Progress_C:Update` collapses it again.
+  dashed ring) is always visible and no Blueprint touches it. It is not a Blueprint variable, so it
+  is not a property: it is found once per HUD widget at `<widget path>.WidgetTree.Image_341`
+  (a walk of the tree by name as a fallback). On foot (`Q1Hud."CharacterOn?"`) and with the reticle
+  on, it is set Hidden from the 0.5 s loop and given back its visibility in ships.
+- **Target bar**: `Ship_MainWidget:UpdateEnemyHP` (called by the on-foot AI on a hit that doesn't
+  kill) shows `Foot_Enemy_Progress_1286` and calls its `Update`, which adds the number to the bar's
+  `Damage_Holder`. `Update` cannot be hooked: it takes a Text, and UE4SS 3.0.1 logs
+  `[push_textproperty] Operation::GetParam is not supported` and never calls the Lua hook. So the
+  `Damage_Holder_C:AddDamage` post-hook collapses the holder's owner (`GetOuter():GetOuter()`) when
+  it is a `Foot_Enemy_Progress_C`; the 0.5 s loop collapses the bar too if it is ever left visible.
 - **Markers on foot (0.1.1)**: `Q1Hud_C:Objectives` returns at once while `Q1Hud."Any3d Widget On"`
   is true (the game sets it while a 3D menu is open; only `Q1Hud` reads it). The 0.5 s loop sets it
   on foot and clears it once when leaving foot or when markers are shown again. No native hook. It

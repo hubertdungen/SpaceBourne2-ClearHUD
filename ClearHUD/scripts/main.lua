@@ -28,7 +28,9 @@ local G = {
     ChildEvents = { "CrosshairReaction", "Recoil", "ZoomIn", "ZoomOut" },
     DamageHolder = "/Game/Packes/CompShooterHUD/UI/Content/Q1_Damage/Damage_Holder.Damage_Holder_C",
     -- the target panel at the top on foot: name, level and health line of the enemy you hit
-    TargetBar = "/Game/Packes/ProgressBars/Blueprints/Foot_Enemy_Progress.Foot_Enemy_Progress_C",
+    TargetBarShort = "Foot_Enemy_Progress_C",
+    TargetBarVar = "Foot_Enemy_Progress_1286", -- the bar inside Ship_MainWidget
+    SmwShort = "Ship_MainWidget_C",
     WBL = "/Script/UMG.Default__WidgetBlueprintLibrary",
     -- HUD widgets that get the theme (main HUD, on-foot overlays); only those that have a Construct
     ThemeClasses = {
@@ -495,29 +497,37 @@ local function onThemeConstruct(ctx)
     if valid(w) then later(w, 0.5, applyTheme) end
 end
 
--- Damage numbers -------------------------------------------------------------------------------
+-- Damage numbers and the target bar on foot ---------------------------------------------------------
+-- Ship_MainWidget shows Foot_Enemy_Progress on every hit and calls its Update, which adds the damage
+-- number to the bar's Damage_Holder. Update cannot be hooked (it takes a Text, which UE4SS 3.0.1
+-- cannot pass to Lua), so the bar is collapsed from AddDamage: the holder's owner is the bar.
+local function barOf(holder)
+    local ok, o = pcall(function() return holder:GetOuter():GetOuter() end)
+    if ok and valid(o) and className(o) == G.TargetBarShort then return o end
+    return nil
+end
 local holderVis = nil
 local function onAddDamage(ctx)
-    if not S.hideNumbers and holderVis == nil then return end
+    if not (S.hideNumbers or S.hideBar or holderVis ~= nil) then return end
     local h = ctx:get()
     if not valid(h) then return end
+    if S.hideBar then
+        local bar = barOf(h)
+        if bar then
+            pcall(function() bar:SetVisibility(SLATE.Collapsed) end)
+            S.fwd.bar = (S.fwd.bar or 0) + 1
+        end
+    end
     if S.hideNumbers then
         if holderVis == nil then
             local ok, v = pcall(function() return h:GetVisibility() end)
             holderVis = (ok and type(v) == "number" and v ~= SLATE.Collapsed) and v or SLATE.HitTestInvisible
         end
         pcall(function() h:SetVisibility(SLATE.Collapsed) end)
-    else
+        S.fwd.numbers = (S.fwd.numbers or 0) + 1
+    elseif holderVis ~= nil then
         pcall(function() h:SetVisibility(holderVis) end)
     end
-end
-
--- Target bar on foot ----------------------------------------------------------------------------
--- Ship_MainWidget shows Foot_Enemy_Progress, then calls its Update on every hit: collapse it after.
-local function onTargetUpdate(ctx)
-    if not S.hideBar then return end
-    local w = ctx:get()
-    if valid(w) then pcall(function() w:SetVisibility(SLATE.Collapsed) end) end
 end
 
 -- Markers on foot ------------------------------------------------------------------------------------
@@ -537,13 +547,85 @@ local function theHud(now)
     if valid(h) then HUD.path, HUD.addr = fullPath(h), addr(h); return h end
     return nil
 end
+-- The HUD widget (Ship_MainWidget, used in ships and on foot). The HUD's own "Ship Main Widget"
+-- variable is empty in game, so it is found by class (the one on screen) and cached like the HUD.
+local SMW = { path = nil, addr = nil, nextFind = 0 }
+local function theSmw(now)
+    if SMW.path then
+        local w = StaticFindObject(SMW.path)
+        if valid(w) and addr(w) == SMW.addr then return w end
+        SMW.path = nil
+    end
+    if now < SMW.nextFind then return nil end
+    SMW.nextFind = now + 5 -- FindAllOf: only while looking
+    for _, w in ipairs(FindAllOf(G.SmwShort) or {}) do
+        local ok, on = pcall(function() return w:IsInViewport() end)
+        if ok and on == true and valid(w) then
+            SMW.path, SMW.addr = fullPath(w), addr(w)
+            log("HUD widget found: " .. tostring(SMW.path))
+            return w
+        end
+    end
+    return nil
+end
+-- Backstop for a hit that adds no number: collapse the bar if the game shows it.
+local function barCheck(smw)
+    local bar = get(smw, G.TargetBarVar)
+    if not valid(bar) then return end
+    local ok, v = pcall(function() return bar:GetVisibility() end)
+    if ok and v ~= SLATE.Collapsed and v ~= SLATE.Hidden then
+        pcall(function() bar:SetVisibility(SLATE.Collapsed) end)
+        S.fwd.barLoop = (S.fwd.barLoop or 0) + 1
+    end
+end
+
+-- The ring is not a Blueprint variable, so it is not a property of the HUD widget: find it once per
+-- HUD widget by its path in the widget tree (a walk of the tree by name as a fallback).
+local function findNamed(w, name, depth)
+    if not valid(w) or depth > 12 then return nil end
+    local ok, n = pcall(function() return w:GetFName():ToString() end)
+    if ok and n == name then return w end
+    local okN, count = pcall(function() return w:GetChildrenCount() end)
+    if okN and type(count) == "number" then
+        for i = 0, count - 1 do
+            local okC, c = pcall(function() return w:GetChildAt(i) end)
+            if okC then
+                local r = findNamed(c, name, depth + 1)
+                if r then return r end
+            end
+        end
+    end
+    return nil
+end
+local function findRing(smw)
+    local img = get(smw, G.Ring)
+    if valid(img) then return img, "property" end
+    local base = fullPath(smw)
+    if base then img = StaticFindObject(base .. ".WidgetTree." .. G.Ring) end
+    if valid(img) then return img, "path" end
+    local t0 = os.clock()
+    img = findNamed(get(get(smw, "WidgetTree"), "RootWidget"), G.Ring, 0)
+    if valid(img) then return img, string.format("tree walk, %.1f ms", (os.clock() - t0) * 1000) end
+    return nil
+end
+
 local RING = { hidden = false }
-local function ring(h, onFoot)
-    local smw = get(h, "Ship Main Widget")
-    local img = valid(smw) and get(smw, G.Ring) or nil
-    if not valid(img) then return end
+local function ring(smw, onFoot)
+    local a = addr(smw)
+    if a ~= RING.smwAddr then RING.smwAddr, RING.path, RING.hidden, RING.tried = a, nil, false, false end
     local want = onFoot and RET.hideRing
     if want == RING.hidden then return end
+    local img
+    if RING.path then img = StaticFindObject(RING.path) end
+    if not valid(img) then
+        if RING.tried then return end -- looked once for this HUD widget
+        RING.tried = true
+        local how
+        img, how = findRing(smw)
+        if not valid(img) then log("game's centre ring not found"); return end
+        RING.path = fullPath(img)
+        log("game's centre ring found (" .. how .. ")")
+    end
     if want then
         local ok, v = pcall(function() return img:GetVisibility() end)
         RING.vis = (ok and type(v) == "number" and v ~= SLATE.Hidden and v ~= SLATE.Collapsed) and v or SLATE.HitTestInvisible
@@ -556,11 +638,18 @@ local function ring(h, onFoot)
 end
 
 local function markers(now)
-    if not (S.hideMarkers or S.forced or RET.hideRing) then return end
+    local needSmw = RET.hideRing or S.hideBar
+    if not (S.hideMarkers or S.forced or needSmw) then return end
     local h = theHud(now)
     if not h then S.forced = false; RING.hidden = false; return end
     local onFoot = get(h, "CharacterOn?") == true
-    if RET.hideRing then pcall(ring, h, onFoot) end
+    if needSmw then
+        local smw = theSmw(now)
+        if smw then
+            if RET.hideRing then pcall(ring, smw, onFoot) end
+            if S.hideBar then pcall(barCheck, smw) end
+        end
+    end
     if not (S.hideMarkers or S.forced) then return end
     if S.hideMarkers and onFoot then
         if get(h, "Any3d Widget On") ~= true then pcall(function() h["Any3d Widget On"] = true end) end
@@ -626,7 +715,7 @@ local function maintain()
         S.statAt = now
         local parts = {}
         for k2, v in pairs(S.fwd) do parts[#parts + 1] = k2 .. "=" .. v end
-        if #parts > 0 then log("reticle events forwarded to the outline: " .. table.concat(parts, " ")) end
+        if #parts > 0 then log("events (reticle forwards, bar and numbers hidden): " .. table.concat(parts, " ")) end
     end
     if #pendingChild > 0 then
         local list = pendingChild
@@ -711,8 +800,7 @@ local function bindToggle(spec)
 end
 bound = bindToggle(cfg.ToggleKey)
 
-if barNeeded() then want(G.TargetBar, function(cp) hook(cp .. ":Update", guarded("target bar", onTargetUpdate)) end) end
-if numbersNeeded() then want(G.DamageHolder, function(cp) hook(cp .. ":AddDamage", guarded("numbers", onAddDamage)) end) end
+if numbersNeeded() or barNeeded() then want(G.DamageHolder, function(cp) hook(cp .. ":AddDamage", guarded("numbers", onAddDamage)) end) end
 LoopAsync(500, function()
     ExecuteInGameThread(function()
         local ok, err = pcall(maintain)
