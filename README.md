@@ -98,7 +98,7 @@ When a weapon adds the reticle, Clear HUD sets its colour, opacity and size, and
 of the same reticle right behind it, a pixel or two to each side, as the outline. The copies get
 the same movement, recoil and zoom animations, so they stay in place. The theme swaps the HUD's
 cyan once, when the HUD is built. Nothing runs every frame but a timer check on the game's own
-ticks (no UE4SS background loops since 0.1.3). Details:
+ticks (no UE4SS background loops, which can crash UE4SS when several mods use them). Details:
 [DESIGN.md](https://github.com/hubertdungen/SpaceBourne2-ClearHUD/blob/main/DESIGN.md).
 
 ## Status and known limits
