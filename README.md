@@ -6,7 +6,7 @@ On foot, SpaceBourne 2's reticle is thin, light grey and has no outline: on snow
 sky or a busy station you lose it. Clear HUD gives it a strong colour, a dark outline and a bigger
 size, lets you change the HUD's cyan for another colour, and can hide the damage numbers on foot.
 
-Version 0.1.1 · [Nexus Mods page](https://www.nexusmods.com/spacebourne2/mods/16) · UE4SS Lua mod · works alone or with the rest of the
+Version 0.1.2 · [Nexus Mods page](https://www.nexusmods.com/spacebourne2/mods/16) · UE4SS Lua mod · works alone or with the rest of the
 realism set (see below). Asked for by players on the DBK Games Discord.
 
 ## What it does
@@ -103,14 +103,14 @@ cyan once, when the HUD is built. Nothing runs every frame. Details:
 ## Status and known limits
 
 <!-- nexus:skip -->
-0.1.1, tested in game on 2026-11-06 (same save, all set mods incl. Tactical First Person and Bigger
-Armies): with the Amber theme all HUD text stays visible (missions, squad, weapon, ammo); markers on
-foot hidden and shown again (the squad marker goes, the flag the game reads is set); damage numbers
-hidden on a hit; the game's centre ring gone on foot, so only one reticle; the target bar collapsed
-by the mod as soon as a damage number is added to it; frame time 10.2 ms on average over 29 s on
-foot with enemies; saves untouched. In one of five test loads the theme was not applied (a hook
-error while the level loaded); 0.1.1 now themes the HUD from its half-second check when that
-happens. That fallback is not yet seen in game.
+0.1.2, tested in game on 2026-11-06 (same save, all set mods incl. Tactical First Person and Bigger
+Armies): in a fight the game put the target bar up for 205 frames and it was on screen in none of
+them; shown again with the key, it is back. Both fallbacks seen with their hooks made to fail: the
+theme applied from the half-second check, the reticle applied again within a second. From the same
+day's 0.1.1 tests: with the Amber theme all HUD text stays visible (missions, squad, weapon, ammo);
+markers on foot hidden (the red enemy arrows and the green squad marker) and shown again; damage
+numbers hidden on a hit; the game's centre ring gone on foot, so only one reticle; frame time about
+10 ms on average on foot with enemies; saves untouched.
 
 Tested in game on 2026-11-01 (station, pretest save, with HTR, Split Controls, Silent Ops, Gear
 Without Levels, Faction Power, Tactical Engineering, Ammo Discipline, Get Out of the Way and Ground

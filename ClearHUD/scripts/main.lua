@@ -12,7 +12,7 @@
   Nothing runs every frame except that one filter, and only for the HUD's call. See DESIGN.md.
 ]]
 
-local VERSION = "0.1.1"
+local VERSION = "0.1.2"
 
 -- Game names (the only things to fix after a game patch) -------------------------------------
 local CH = "/Game/Packes/CompShooterHUD/UI/Content/Crosshairs/"
@@ -385,10 +385,24 @@ local function applyReticle(base)
     if not okO then warn("outline: " .. tostring(err)) end
 end
 
+-- Debug only: a file in the mod folder makes a hook act as if ctx:get() had failed, to test the fallbacks.
+local function forcedFail(name, once)
+    if not verbose then return false end
+    local f = io.open(DIR .. name, "r")
+    if not f then return false end
+    f:close()
+    if once then os.remove(DIR .. name) end
+    log("debug: " .. name .. " makes a hook fail")
+    return true
+end
+
+-- ctx:get() in these hooks threw once at a weapon draw (2026-11-06), and the reticle was not applied:
+-- the half-second check then applies it (reticleRetry).
 local inAdd = false
 local function onAddCrosshair(ctx, ptype, pcolor, pscale)
     if inAdd then return end
-    local base = ctx:get()
+    local okB, base = pcall(function() return ctx:get() end)
+    if not okB or forcedFail("failreticle.txt", true) then RET.retry = true; return end
     if not valid(base) then return end
     if RET.style then
         local okT, t = pcall(function() return ptype:get() end)
@@ -402,8 +416,22 @@ local function onAddCrosshair(ctx, ptype, pcolor, pscale)
     applyReticle(base)
 end
 local function onCreateChild(ctx)
-    local base = ctx:get()
+    local okB, base = pcall(function() return ctx:get() end)
+    if not okB then RET.retry = true; return end
     if valid(base) then applyReticle(base) end
+end
+local function reticleRetry()
+    if not RET.retry then return end
+    RET.retry = false
+    local base = FindFirstOf("WB_CrosshairBase_C") -- once per missed hook
+    if not valid(base) then return end
+    log("reticle: the hook missed the crosshair; applying the reticle now")
+    if RET.style then
+        inAdd = true
+        pcall(function() base:AddCrosshair(RET.style - 1, RET.color or { R = 0.9, G = 0.9, B = 0.9, A = 1 }, 1.0) end)
+        inAdd = false
+    end
+    applyReticle(base)
 end
 
 -- Theme --------------------------------------------------------------------------------------
@@ -497,6 +525,7 @@ local function applyTheme(w)
 end
 local function onThemeConstruct(ctx)
     -- ctx:get() failed once during a level load (2026-11-06); the 0.5 s loop then themes the HUD
+    if forcedFail("failtheme.txt", false) then return end -- debug: removed by themeMissed
     local ok, w = pcall(function() return ctx:get() end)
     if ok and valid(w) then later(w, 0.5, applyTheme) end
 end
@@ -572,10 +601,29 @@ local function theSmw(now)
     end
     return nil
 end
--- Backstop for a hit that adds no number: collapse the bar if the game shows it.
+-- While hidden, the bar is kept at opacity 0. The game also shows it on hits that add no number (seen
+-- 2026-11-06 in a fight: the bar on screen in 345 of 513 frames, with 4 numbers added), and nothing in
+-- the game sets its opacity, so no frame shows it. It is collapsed as well, out of the layout. Shown again
+-- (key or config), it gets its opacity back.
+local BAR = { addr = nil, opacity = nil }
 local function barCheck(smw)
     local bar = get(smw, G.TargetBarVar)
     if not valid(bar) then return end
+    local a = addr(bar)
+    if a ~= BAR.addr then BAR.addr, BAR.opacity = a, nil end -- a new HUD widget: its bar is as the game made it
+    if not S.hideBar then
+        if BAR.opacity ~= nil then
+            pcall(function() bar:SetRenderOpacity(BAR.opacity) end)
+            BAR.opacity = nil
+        end
+        return
+    end
+    local okO, o = pcall(function() return bar:GetRenderOpacity() end)
+    if BAR.opacity == nil then BAR.opacity = (okO and type(o) == "number" and o > 0) and o or 1.0 end
+    if not okO or o ~= 0 then
+        pcall(function() bar:SetRenderOpacity(0.0) end)
+        S.fwd.barDim = (S.fwd.barDim or 0) + 1
+    end
     local ok, v = pcall(function() return bar:GetVisibility() end)
     if ok and v ~= SLATE.Collapsed and v ~= SLATE.Hidden then
         pcall(function() bar:SetVisibility(SLATE.Collapsed) end)
@@ -646,12 +694,13 @@ local function themeMissed(smw)
     if not a or THEMED[a] then return end
     for _, q in ipairs(queue) do if q.addr == a then return end end -- already waiting
     THEMED[a] = true -- once per widget
+    if verbose then os.remove(DIR .. "failtheme.txt") end
     log("theme: the Construct hook missed this HUD widget; theming it now")
     later(smw, 0.2, applyTheme)
 end
 
 local function markers(now)
-    local needSmw = RET.hideRing or S.hideBar or TH ~= nil
+    local needSmw = RET.hideRing or S.hideBar or BAR.opacity ~= nil or TH ~= nil
     if not (S.hideMarkers or S.forced or needSmw) then return end
     local h = theHud(now)
     if not h then S.forced = false; RING.hidden = false; return end
@@ -660,7 +709,7 @@ local function markers(now)
         local smw = theSmw(now)
         if smw then
             if RET.hideRing then pcall(ring, smw, onFoot) end
-            if S.hideBar then pcall(barCheck, smw) end
+            if S.hideBar or BAR.opacity ~= nil then pcall(barCheck, smw) end
             if TH then pcall(themeMissed, smw) end
         end
     end
@@ -724,6 +773,7 @@ local function maintain()
         if f then f:close(); os.remove(DIR .. "toggle.txt"); S.hideNumbers = not S.hideNumbers; S.hideBar = S.hideNumbers; S.hideMarkers = S.hideNumbers; log("toggled by file: hidden=" .. tostring(S.hideNumbers)) end
     end
     runQueue(now)
+    if RET.retry then pcall(reticleRetry) end
     markers(now)
     if verbose and now - (S.statAt or 0) >= 10 then
         S.statAt = now

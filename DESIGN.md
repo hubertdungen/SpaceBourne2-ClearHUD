@@ -65,7 +65,9 @@ Nothing is looked up or drawn every frame.
   `ZoomOut` and `ActivateCrosshair` to the copies (and hide them on `RemoveCrosshair`), so they move
   with it. Because the copies live inside the child, hiding the crosshair (Tactical First Person
   does it in first person) hides them too, and they go away with it. The child-class hooks are
-  registered from the 0.5 s loop, never from inside another hook.
+  registered from the 0.5 s loop, never from inside another hook. If `ctx:get()` throws in one of
+  these hooks (seen once at a weapon draw, 2026-11-06), the 0.5 s loop finds the crosshair once
+  (`FindFirstOf`), adds the chosen shape and applies the reticle (0.1.2).
 - **Theme**: post-hook of `Construct` on `Ship_MainWidget_C` (the on-foot and ship HUD;
   `Character_Main_Widget_C` and `Misactor_Main_Widget_C` are listed but do not override
   `Construct`); 0.5 s later (the widget is re-found by path first) one walk of its tree,
@@ -87,7 +89,10 @@ Nothing is looked up or drawn every frame.
   `Damage_Holder`. `Update` cannot be hooked: it takes a Text, and UE4SS 3.0.1 logs
   `[push_textproperty] Operation::GetParam is not supported` and never calls the Lua hook. So the
   `Damage_Holder_C:AddDamage` post-hook collapses the holder's owner (`GetOuter():GetOuter()`) when
-  it is a `Foot_Enemy_Progress_C`; the 0.5 s loop collapses the bar too if it is ever left visible.
+  it is a `Foot_Enemy_Progress_C`. The game also shows the bar on hits that add no number (in a
+  2026-11-06 fight it was on screen in 345 of 513 frames with 4 numbers added), so since 0.1.2 the
+  0.5 s loop keeps the bar at render opacity 0 while it is hidden (nothing in the game sets its
+  opacity) and collapses it if it is left visible; its opacity is given back when it is shown again.
 - **Markers on foot (0.1.1)**: `Q1Hud_C:Objectives` returns at once while `Q1Hud."Any3d Widget On"`
   is true (the game sets it while a 3D menu is open; only `Q1Hud` reads it). The 0.5 s loop sets it
   on foot and clears it once when leaving foot or when markers are shown again. No native hook. It
@@ -132,6 +137,8 @@ In one of five test loads (2026-11-06) `ctx:get()` in the `Ship_MainWidget_C:Con
 threw while the level loaded, and the theme was never applied. 0.1.1 wraps it, records every themed
 widget by address, and the 0.5 s loop themes the on-screen HUD widget once if it is neither themed nor
 waiting in the queue (the same ~0.75 s walk as at load, so a single short pause in that rare case).
+Seen in game on 2026-11-06 with the hook made to fail (debug file, see section 5): the HUD was themed
+from the loop as soon as it was found.
 
 Test of 2026-11-06 (launch 5): the direct bar check (show the bar, add a number to its
 `Damage_Holder`) read Visible before and Collapsed after; frame time 10.2 ms on average over 29 s
@@ -153,3 +160,14 @@ in the test kit. Launch 4: the game closed by itself before the menu (no crash r
 normally; the same happened earlier without Clear HUD). Launch 5: frames 9.6 / 9.7 ms average, max
 30 ms, captures of the game window. Damage-number hiding not seen (the spawned test enemies were
 removed by the game).
+
+2026-11-06, same save, all set mods on (0.1.1, then 0.1.2). Launches 1-5: see section 3 and the
+README. Launch 6: markers hidden by `HideMarkersOnFoot` with live enemies (no enemy arrow, no squad
+marker; both back with the key). No shot landed: HTR's damage is a share of MaxHP, so the squad
+killed the test shooters (HP raised to 1e6) within 2 s. Launch 7 (HTR off for the test only): 4 hits,
+the bar collapsed after each number, but on screen in 345 of 513 frames from hits without a number.
+Launch 8 (0.1.2): the bar in a visible state for 205 frames, on screen in none; opacity back to 1 when
+shown. Launch 9: the game stalled before the main menu, before any mod hooked a class. Launch 10: with
+Debug on, the files `failtheme.txt` and `failreticle.txt` in the mod folder make those hooks act as
+failed; the theme was applied from the loop and the reticle again within a second (orange, scale
+1.25, 4 outline copies); frames 10.2 ms on average.
