@@ -891,6 +891,7 @@ if numbersNeeded() or barNeeded() then want(G.DamageHolder, function(cp) hook(cp
 -- game, UE4SS.dll+0x87c104). Pumped by the HUD's drawing and the HUD hooks; started after each
 -- load or possession (ClientRestart).
 GT.drive(GT.HUD_TICK, "hud") -- the player's HUD drawing: once per frame, on foot and in ships
+GT.drive(GT.FOOT_TICK, "foot") -- fallback when the HUD is hidden (the pump runs once per frame anyway)
 GT.boot()
 GT.every(0.5, function()
     local ok, err = pcall(maintain)
