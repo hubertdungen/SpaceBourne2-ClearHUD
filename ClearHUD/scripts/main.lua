@@ -7,14 +7,16 @@
     same animation calls as the real one (movement, recoil, zoom), so they move with it.
   * Theme: the HUD's cyan (about hue 177) is swapped for the theme colour in the HUD widgets, once,
     after each one is built (post-hook of its Construct).
-  * Damage numbers: post-hook of Damage_Holder_C:AddDamage collapses the holder.
+  * Damage numbers: post-hook of Damage_Holder_C:AddDamage collapses the holder (the numbers by the
+    target bar), and post-hook of WB_SpecialHitPoint_C:Construct collapses the floating number the
+    on-foot AI puts at the hit point.
 
   Nothing runs every frame except that one filter, and only for the HUD's call, and the timer
   check of chud/gametick.lua on the game's own ticks (no UE4SS background loops since 0.1.3:
   they could crash UE4SS when several mods used them at once). See DESIGN.md.
 ]]
 
-local VERSION = "0.1.3"
+local VERSION = "0.1.4"
 
 -- Game names (the only things to fix after a game patch) -------------------------------------
 local CH = "/Game/Packes/CompShooterHUD/UI/Content/Crosshairs/"
@@ -29,6 +31,8 @@ local G = {
     -- I_Crosshair_Manager calls the outline copies must follow
     ChildEvents = { "CrosshairReaction", "Recoil", "ZoomIn", "ZoomOut" },
     DamageHolder = "/Game/Packes/CompShooterHUD/UI/Content/Q1_Damage/Damage_Holder.Damage_Holder_C",
+    -- the floating damage number at the hit point (New_Q1_AI "Calculate Damage", ShowDamageText)
+    HitPoint = "/Game/Packes/CompShooterHUD/UI/Content/HitPoints/WB_SpecialHitPoint.WB_SpecialHitPoint_C",
     -- the target panel at the top on foot: name, level and health line of the enemy you hit
     TargetBarShort = "Foot_Enemy_Progress_C",
     TargetBarVar = "Foot_Enemy_Progress_1286", -- the bar inside Ship_MainWidget
@@ -562,8 +566,8 @@ end
 local holderVis = nil
 local function onAddDamage(ctx)
     if not (S.hideNumbers or S.hideBar or holderVis ~= nil) then return end
-    local h = ctx:get()
-    if not valid(h) then return end
+    local okH, h = pcall(function() return ctx:get() end)
+    if not okH or not valid(h) then return end
     if S.hideBar then
         local bar = barOf(h)
         if bar then
@@ -581,6 +585,19 @@ local function onAddDamage(ctx)
     elseif holderVis ~= nil then
         pcall(function() h:SetVisibility(holderVis) end)
     end
+end
+
+-- The other damage numbers on foot: on each hit the AI (New_Q1_AI "Calculate Damage", while its
+-- ShowDamageText is on) adds a WB_SpecialHitPoint_C to the viewport at the hit point, red on a
+-- headshot. Its Construct sets the text and starts the fade, its Tick follows the hit point, and a
+-- 1 s delay removes it. Collapsed in the Construct post-hook, before it is first drawn; the game
+-- still removes it after 1 s.
+local function onHitPoint(ctx)
+    if not S.hideNumbers then return end
+    local ok, w = pcall(function() return ctx:get() end)
+    if not ok or not valid(w) then return end
+    pcall(function() w:SetVisibility(SLATE.Collapsed) end)
+    S.fwd.floating = (S.fwd.floating or 0) + 1
 end
 
 -- Markers on foot ------------------------------------------------------------------------------------
@@ -886,6 +903,7 @@ end
 bound = bindToggle(cfg.ToggleKey)
 
 if numbersNeeded() or barNeeded() then want(G.DamageHolder, function(cp) hook(cp .. ":AddDamage", guarded("numbers", onAddDamage)) end) end
+if numbersNeeded() then want(G.HitPoint, function(cp) hook(cp .. ":Construct", guarded("floating numbers", onHitPoint)) end) end
 -- Twice a second on the game thread (until 0.1.2: LoopAsync + ExecuteInGameThread, which from
 -- UE4SS's async thread writes a map all mods share without a lock: two mods at once crashed the
 -- game, UE4SS.dll+0x87c104). Pumped by the HUD's drawing and the HUD hooks; started after each

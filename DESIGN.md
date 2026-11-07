@@ -42,7 +42,12 @@ touched.
 
 **Damage numbers.** `Damage_Holder_C` (four `Damage_Slot_C` texts) receives `AddDamage(value,
 crit)`. On foot, the target panel (`Ship_MainWidget.Foot_Enemy_Progress_1286`) calls it on every
-hit with no setting. In space, `Master_Enemy` and capital ships only call it when the CVar
+hit with no setting. On foot there is a second kind: the AI's `New_Q1_AI` "Calculate Damage" (base
+of the on-foot enemies), while its `ShowDamageText` is on (a default, nothing in the game sets it),
+creates a `WB_SpecialHitPoint_C` (`/Game/Packes/CompShooterHUD/UI/Content/HitPoints/`) and adds it
+to the viewport at the hit point + 1 m, red on a headshot. Its `Construct` sets the text and starts
+the fade, its `Tick` projects the hit point to the screen, and a 1 s `Delay` removes it. Since 0.1.4
+a post-hook of its `Construct` collapses it before it is first drawn (the game still removes it). In space, `Master_Enemy` and capital ships only call it when the CVar
 `Game:DamageText` is on (Settings → Interface → **Damage Text**, off by default).
 
 **The game's own settings** (Settings → Interface): Static Game HUD, Display Keybinds (never /

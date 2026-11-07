@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4 (not released yet)
+
+- Fixed: with `HideDamageNumbers` on, the floating damage numbers at the hit point on foot still
+  showed (red on a headshot). They are a second kind of number, which the enemy itself adds to the
+  screen on each hit; they are now hidden too.
+
 ## 0.1.3 (2026-11-06)
 
 - **Fixed: a UE4SS crash with many mods** ("Fatal error" in UE4SS.dll, at the main menu or in
