@@ -16,7 +16,7 @@
   they could crash UE4SS when several mods used them at once). See DESIGN.md.
 ]]
 
-local VERSION = "0.1.4"
+local VERSION = "0.1.5"
 
 -- Game names (the only things to fix after a game patch) -------------------------------------
 local CH = "/Game/Packes/CompShooterHUD/UI/Content/Crosshairs/"
@@ -168,8 +168,8 @@ end
 
 -- State ------------------------------------------------------------------------------------
 local S = {
-    hideNumbers = cfg.HideDamageNumbers == true,
-    hideBar = cfg.HideTargetBar == true,
+    hideNumbers = cfg.HideDamageNumbers ~= false, -- on unless set to false (0.1.5)
+    hideBar = cfg.HideTargetBar ~= false,
     hideMarkers = cfg.HideMarkersOnFoot == true,
     forced = false,
     fwd = {},
