@@ -70,7 +70,14 @@ Nothing is looked up or drawn every frame.
   `ZoomOut` and `ActivateCrosshair` to the copies (and hide them on `RemoveCrosshair`), so they move
   with it. Because the copies live inside the child, hiding the crosshair (Tactical First Person
   does it in first person) hides them too, and they go away with it. The child-class hooks are
-  registered from the 0.5 s loop, never from inside another hook. If `ctx:get()` throws in one of
+  registered from the 0.5 s loop, never from inside another hook. Since 0.1.4 the outline itself
+  (the only change to a game widget tree: the child's one root panel is taken out and put back after
+  the copies) is not done in the hooks: they queue it, and a gametick job ~50 ms later does it from
+  the HUD's drawing or the player's tick (outside Slate's paint), only if the child is still
+  `OV_Crosshair`'s child 0 and its root still has exactly one panel. Only the current child's copies
+  are kept in Lua; the game destroys older children with their copies. Each copy, as a full
+  `WB_Crosshair_NN`, runs its own Construct (one `GetAllWidgetsOfClass` and a 0.01 s looping timer
+  for its movement reaction), the same as the game's child. If `ctx:get()` throws in one of
   these hooks (seen once at a weapon draw, 2026-11-06), the 0.5 s loop finds the crosshair once
   (`FindFirstOf`), adds the chosen shape and applies the reticle (0.1.2). The new crosshair child
   gets the old one's visibility when that was Hidden or Collapsed (Tactical First Person hides the

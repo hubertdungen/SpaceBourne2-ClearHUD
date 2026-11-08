@@ -5,6 +5,11 @@
 - Fixed: with `HideDamageNumbers` on, the floating damage numbers at the hit point on foot still
   showed (red on a headshot). They are a second kind of number, which the enemy itself adds to the
   screen on each hit; they are now hidden too.
+- Safer with the HUD (after a crash report in a long fight): the reticle outline no longer changes
+  the crosshair's widgets inside the game's own crosshair call. It is done a moment later from the
+  game's tick, only on the crosshair the game currently shows and only once, and the mod keeps no
+  reference to crosshairs the game has replaced. The mod's timed work (outline, theme, retries)
+  never runs inside another hook any more.
 
 ## 0.1.3 (2026-11-06)
 

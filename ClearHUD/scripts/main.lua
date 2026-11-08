@@ -74,7 +74,8 @@ end
 local function log(...) if verbose then write("", ...) end end
 local function warn(...) print("[ClearHUD] " .. write("WARN ", ...) .. "\n") end
 -- Timed work on the game thread (gametick.lua, the set's shared file): pumped by the HUD's drawing
--- and by this mod's own HUD hooks. No LoopAsync / ExecuteWithDelay (UE4SS crash).
+-- and the player's tick only, never from inside this mod's hooks (0.1.4). No LoopAsync /
+-- ExecuteWithDelay (UE4SS crash).
 local GT = require("chud.gametick")
 GT.log = function(msg) warn(msg) end
 
@@ -340,6 +341,10 @@ local function outline(child, base)
     local t0 = os.clock()
     local kids = {}
     local n = root:GetChildrenCount()
+    if n ~= 1 then -- every game crosshair has one panel at its root: anything else was already changed
+        log("no outline for " .. className(child) .. ": " .. tostring(n) .. " panels at its root")
+        return
+    end
     for i = 0, n - 1 do
         local k = root:GetChildAt(i)
         if valid(k) then
@@ -376,9 +381,34 @@ local function outline(child, base)
             if k.pad then pcall(function() slot:SetPadding(k.pad) end) end
         end
     end
-    OUT[a] = { path = fullPath(child), shadows = shadows }
+    OUT = { [a] = { path = fullPath(child), shadows = shadows } } -- the current crosshair only: older
+    -- ones are destroyed by the game with their copies, and no reference to them is kept
     hookChildClass(cls)
     log(string.format("outline: %d copies on %s in %.1f ms", #shadows, className(child), (os.clock() - t0) * 1000))
+end
+
+-- The outline changes the crosshair's own widget tree (its one panel is taken out and put back
+-- behind the copies). Never inside a hook, while the game builds the crosshair, nor during Slate's
+-- paint: queued and done about 50 ms later from the game-thread tick (the HUD's drawing or the
+-- player's tick), and only if the crosshair is still the current one and as the game built it.
+local pendingOutline = nil
+local function scheduleOutline(base, child)
+    if #RET.offsets == 0 then return end
+    local a = addr(child)
+    if not a or shadowsOf(child) then return end
+    if pendingOutline and pendingOutline.addr == a then return end
+    pendingOutline = { base = base, child = child, addr = a, path = fullPath(child) }
+    GT.after(0.05, function()
+        local p = pendingOutline
+        pendingOutline = nil
+        if not (p and valid(p.base) and valid(p.child)) then return end
+        if addr(p.child) ~= p.addr or fullPath(p.child) ~= p.path then return end
+        local ov = get(p.base, "OV_Crosshair")
+        local okC, cur = pcall(function() return ov:GetChildAt(0) end)
+        if not (okC and valid(cur) and addr(cur) == p.addr) then return end -- replaced meanwhile
+        local okO, err = pcall(outline, p.child, p.base)
+        if not okO then warn("outline: " .. tostring(err)) end
+    end)
 end
 
 local function applyReticle(base)
@@ -389,8 +419,7 @@ local function applyReticle(base)
     local ok, child = pcall(function() return ov:GetChildAt(0) end)
     if not (ok and valid(child)) then return end -- built later (CreateCrosshairChild)
     if RET.size ~= 1 then pcall(function() child:SetRenderScale({ X = RET.size, Y = RET.size }) end) end
-    local okO, err = pcall(outline, child, base)
-    if not okO then warn("outline: " .. tostring(err)) end
+    scheduleOutline(base, child)
 end
 
 -- Debug only: a file in the mod folder makes a hook act as if ctx:get() had failed, to test the fallbacks.
@@ -768,7 +797,8 @@ end
 local function guarded(tag, fn)
     local errors = 0
     return function(...)
-        GT.pump("hud") -- also a game-thread tick for the timed work (costs nothing when nothing is due)
+        -- No GT.pump here (0.1.4): timed work (outline, theme, retries) never runs inside another
+        -- hook, only from the game's ticks (gametick drivers).
         if errors >= 25 then return end
         local ok, err = pcall(fn, ...)
         if not ok then
@@ -906,7 +936,7 @@ if numbersNeeded() or barNeeded() then want(G.DamageHolder, function(cp) hook(cp
 if numbersNeeded() then want(G.HitPoint, function(cp) hook(cp .. ":Construct", guarded("floating numbers", onHitPoint)) end) end
 -- Twice a second on the game thread (until 0.1.2: LoopAsync + ExecuteInGameThread, which from
 -- UE4SS's async thread writes a map all mods share without a lock: two mods at once crashed the
--- game, UE4SS.dll+0x87c104). Pumped by the HUD's drawing and the HUD hooks; started after each
+-- game, UE4SS.dll+0x87c104). Pumped by the HUD's drawing and the player's tick; started after each
 -- load or possession (ClientRestart).
 GT.drive(GT.HUD_TICK, "hud") -- the player's HUD drawing: once per frame, on foot and in ships
 GT.drive(GT.FOOT_TICK, "foot") -- fallback when the HUD is hidden (the pump runs once per frame anyway)
