@@ -54,7 +54,7 @@ Option A (recommended): the [SpaceBourne 2 Realism installer](https://www.nexusm
 
 Option B, manual:
 
-1. Download `ClearHUD-0.1.3.zip` from the
+1. Download `ClearHUD-0.1.4.zip` from the
    [releases](https://github.com/hubertdungen/SpaceBourne2-ClearHUD/releases).
 2. Extract it into the game folder (`...\steamapps\common\SpaceBourne 2\`). It adds
    `SB2\Binaries\Win64\Mods\ClearHUD\`; the `enabled.txt` inside turns it on.
