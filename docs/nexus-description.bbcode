@@ -4,7 +4,7 @@
 
 On foot, SpaceBourne 2's reticle is thin, light grey and has no outline: on snow, sand, a bright sky or a busy station you lose it. Clear HUD gives it a strong colour, a dark outline and a bigger size, lets you change the HUD's cyan for another colour, and can hide the damage numbers on foot.
 
-Version 0.1.4 · [url=https://www.nexusmods.com/spacebourne2/mods/16]Nexus Mods page[/url] · UE4SS Lua mod · works alone or with the rest of the realism set (see below). Asked for by players on the DBK Games Discord.
+Version 0.1.5 · [url=https://www.nexusmods.com/spacebourne2/mods/16]Nexus Mods page[/url] · UE4SS Lua mod · works alone or with the rest of the realism set (see below). Asked for by players on the DBK Games Discord.
 
 [line]
 [size=5][b]What it does[/b][/size]
@@ -14,9 +14,9 @@ Version 0.1.4 · [url=https://www.nexusmods.com/spacebourne2/mods/16]Nexus Mods 
 [*][b]Your colour and shape:[/b] seven colour presets or your own colour, opacity, size, outline or drop shadow, and any of the game's 11 reticle shapes.
 [*][b]HUD colour themes:[/b] amber, green, red, blue, purple or white instead of the game's cyan, or your own colour. Health, warnings and other colours stay as they are. Off by default.
 [*][b]One reticle:[/b] on foot the game's own small ring in the middle is hidden, so it doesn't sit on top of Clear HUD's reticle.
-[*][b]A cleaner screen if you want it:[/b] hide the damage numbers on foot, both kinds: the ones by the enemy bar and the ones that float up from the hit, red on a headshot (the game's own "Damage Text" option only covers ships in space). Also the enemy bar at the top and the markers on foot, in the settings, with an optional key to flip them while you play.
+[*][b]A cleaner screen:[/b] the damage numbers on foot are hidden, both kinds: the ones by the enemy bar and the ones that float up from the hit, red on a headshot (the game's own "Damage Text" option only covers ships in space), and so is the enemy bar at the top. The markers on foot can be hidden too. All in the settings, with an optional key to flip them while you play.
 [*][b]Light:[/b] applied when the game builds the reticle or the HUD, never every frame.
-[*][b]On by default.[/b] Install it and the reticle is clear.
+[*][b]On by default.[/b] Install it and the reticle is clear, with no damage numbers or enemy bar.
 [/list]
 
 [img]https://raw.githubusercontent.com/hubertdungen/SpaceBourne2-ClearHUD/main/docs/reticle.png[/img]
@@ -51,7 +51,7 @@ Option A (recommended): the [url=https://www.nexusmods.com/spacebourne2/mods/11]
 Option B, manual:
 
 [list=1]
-[*]Download ClearHUD-0.1.4.zip from the [url=https://github.com/hubertdungen/SpaceBourne2-ClearHUD/releases]releases[/url].
+[*]Download ClearHUD-0.1.5.zip from the [url=https://github.com/hubertdungen/SpaceBourne2-ClearHUD/releases]releases[/url].
 [*]Extract it into the game folder (...\steamapps\common\SpaceBourne 2\). It adds SB2\Binaries\Win64\Mods\ClearHUD\; the enabled.txt inside turns it on.
 [*]Load a game and draw a weapon.
 [/list]
@@ -77,8 +77,8 @@ Edit Mods\ClearHUD\scripts\config.lua, then restart the game. Every line is opti
 [*]Reticle.HideGameRing: hide the game's small ring in the middle on foot (true).
 [*]Reticle.Enabled: false leaves the reticle as the game makes it.
 [*]Theme.Preset: "Game" (cyan, no change), "Amber", "Green", "Red", "Blue", "Purple", "White" or "Custom" (uses Theme.Color).
-[*]HideDamageNumbers: hide the damage numbers on foot, by the enemy bar and floating at the hit (false).
-[*]HideTargetBar: hide the bar at the top with the name, level and health of the enemy you hit (false).
+[*]HideDamageNumbers: hide the damage numbers on foot, by the enemy bar and floating at the hit (true).
+[*]HideTargetBar: hide the bar at the top with the name, level and health of the enemy you hit (true).
 [*]HideMarkersOnFoot: hide [b]all[/b] the game's markers on foot: the red enemy markers and arrows, and also mission, place and door markers (false). The game has one switch for all of them.
 [*]ToggleKey: none by default (""). Any key the game and the realism set don't use, with or without Shift+; the others are refused.
 [/list]

@@ -6,7 +6,7 @@ On foot, SpaceBourne 2's reticle is thin, light grey and has no outline: on snow
 sky or a busy station you lose it. Clear HUD gives it a strong colour, a dark outline and a bigger
 size, lets you change the HUD's cyan for another colour, and can hide the damage numbers on foot.
 
-Version 0.1.4 · [Nexus Mods page](https://www.nexusmods.com/spacebourne2/mods/16) · UE4SS Lua mod · works alone or with the rest of the
+Version 0.1.5 · [Nexus Mods page](https://www.nexusmods.com/spacebourne2/mods/16) · UE4SS Lua mod · works alone or with the rest of the
 realism set (see below). Asked for by players on the DBK Games Discord.
 
 ## What it does
@@ -20,12 +20,12 @@ realism set (see below). Asked for by players on the DBK Games Discord.
   your own colour. Health, warnings and other colours stay as they are. Off by default.
 - **One reticle:** on foot the game's own small ring in the middle is hidden, so it doesn't sit on
   top of Clear HUD's reticle.
-- **A cleaner screen if you want it:** hide the damage numbers on foot, both kinds: the ones by the
-  enemy bar and the ones that float up from the hit, red on a headshot (the game's own "Damage
-  Text" option only covers ships in space). Also the enemy bar at the top and the markers on foot,
-  in the settings, with an optional key to flip them while you play.
+- **A cleaner screen:** the damage numbers on foot are hidden, both kinds: the ones by the enemy
+  bar and the ones that float up from the hit, red on a headshot (the game's own "Damage Text"
+  option only covers ships in space), and so is the enemy bar at the top. The markers on foot can
+  be hidden too. All in the settings, with an optional key to flip them while you play.
 - **Light:** applied when the game builds the reticle or the HUD, never every frame.
-- **On by default.** Install it and the reticle is clear.
+- **On by default.** Install it and the reticle is clear, with no damage numbers or enemy bar.
 
 ![The reticle with Clear HUD: green, bigger, with a dark outline](https://raw.githubusercontent.com/hubertdungen/SpaceBourne2-ClearHUD/main/docs/reticle.png)
 
@@ -54,7 +54,7 @@ Option A (recommended): the [SpaceBourne 2 Realism installer](https://www.nexusm
 
 Option B, manual:
 
-1. Download `ClearHUD-0.1.4.zip` from the
+1. Download `ClearHUD-0.1.5.zip` from the
    [releases](https://github.com/hubertdungen/SpaceBourne2-ClearHUD/releases).
 2. Extract it into the game folder (`...\steamapps\common\SpaceBourne 2\`). It adds
    `SB2\Binaries\Win64\Mods\ClearHUD\`; the `enabled.txt` inside turns it on.
@@ -84,9 +84,9 @@ Edit `Mods\ClearHUD\scripts\config.lua`, then restart the game. Every line is op
 - `Theme.Preset`: `"Game"` (cyan, no change), `"Amber"`, `"Green"`, `"Red"`, `"Blue"`, `"Purple"`,
   `"White"` or `"Custom"` (uses `Theme.Color`).
 - `HideDamageNumbers`: hide the damage numbers on foot, by the enemy bar and floating at the hit
-  (`false`).
+  (`true`).
 - `HideTargetBar`: hide the bar at the top with the name, level and health of the enemy you hit
-  (`false`).
+  (`true`).
 - `HideMarkersOnFoot`: hide **all** the game's markers on foot: the red enemy markers and arrows,
   and also mission, place and door markers (`false`). The game has one switch for all of them.
 - `ToggleKey`: none by default (`""`). Any key the game and the realism set don't use, with or
@@ -106,6 +106,9 @@ ticks (no UE4SS background loops, which can crash UE4SS when several mods use th
 ## Status and known limits
 
 <!-- nexus:skip -->
+0.1.5 only turns two defaults on (`HideDamageNumbers`, `HideTargetBar`); the code paths are the
+ones tested below with both set to true.
+
 0.1.4, tested in game on 2026-11-08 (same save, all set mods incl. Tactical First Person and Bigger
 Armies): the reticle outline built once, from the game's tick, and the crosshair kept the same 5
 widgets over 8 weapon swaps and after a forced garbage collection; a floating damage number built

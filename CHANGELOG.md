@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.5 (2026-11-08)
+
+- The damage numbers on foot (both kinds) and the enemy bar at the top are now hidden by default,
+  as the realism set wants a clean screen. Set `HideDamageNumbers` or `HideTargetBar` to `false` in
+  `config.lua` to see them again, or use the optional key to flip them while you play. An update
+  through the installer keeps your own `config.lua`.
+
 ## 0.1.4 (2026-11-08)
 
 - Fixed: with `HideDamageNumbers` on, the floating damage numbers at the hit point on foot still
