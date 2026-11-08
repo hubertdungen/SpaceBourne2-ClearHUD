@@ -98,7 +98,7 @@ fill(cfg, {
         Outline = "Outline", OutlineColor = { 0, 0, 0 }, OutlineOpacity = 0.9, OutlineWidth = 1.5, Style = 0,
         HideGameRing = true },
     Theme = { Preset = "Game", Color = { 1.0, 0.45, 0.05 } },
-    HideDamageNumbers = false, HideTargetBar = false, HideMarkersOnFoot = false, ToggleKey = "", Debug = false,
+    HideDamageNumbers = true, HideTargetBar = true, HideMarkersOnFoot = false, ToggleKey = "", Debug = false,
 })
 verbose = cfg.Debug == true
 if verbose then local f = io.open(LOG, "w"); if f then f:close() end end
