@@ -6,7 +6,7 @@ On foot, SpaceBourne 2's reticle is thin, light grey and has no outline: on snow
 sky or a busy station you lose it. Clear HUD gives it a strong colour, a dark outline and a bigger
 size, lets you change the HUD's cyan for another colour, and can hide the damage numbers on foot.
 
-Version 0.1.3 · [Nexus Mods page](https://www.nexusmods.com/spacebourne2/mods/16) · UE4SS Lua mod · works alone or with the rest of the
+Version 0.1.4 · [Nexus Mods page](https://www.nexusmods.com/spacebourne2/mods/16) · UE4SS Lua mod · works alone or with the rest of the
 realism set (see below). Asked for by players on the DBK Games Discord.
 
 ## What it does
@@ -20,9 +20,10 @@ realism set (see below). Asked for by players on the DBK Games Discord.
   your own colour. Health, warnings and other colours stay as they are. Off by default.
 - **One reticle:** on foot the game's own small ring in the middle is hidden, so it doesn't sit on
   top of Clear HUD's reticle.
-- **A cleaner screen if you want it:** hide the damage numbers on foot (the game's own "Damage
-  Text" option only covers ships in space), the enemy bar at the top, and the markers on foot, in
-  the settings, with an optional key to flip them while you play.
+- **A cleaner screen if you want it:** hide the damage numbers on foot, both kinds: the ones by the
+  enemy bar and the ones that float up from the hit, red on a headshot (the game's own "Damage
+  Text" option only covers ships in space). Also the enemy bar at the top and the markers on foot,
+  in the settings, with an optional key to flip them while you play.
 - **Light:** applied when the game builds the reticle or the HUD, never every frame.
 - **On by default.** Install it and the reticle is clear.
 
@@ -82,7 +83,8 @@ Edit `Mods\ClearHUD\scripts\config.lua`, then restart the game. Every line is op
 - `Reticle.Enabled`: `false` leaves the reticle as the game makes it.
 - `Theme.Preset`: `"Game"` (cyan, no change), `"Amber"`, `"Green"`, `"Red"`, `"Blue"`, `"Purple"`,
   `"White"` or `"Custom"` (uses `Theme.Color`).
-- `HideDamageNumbers`: hide the damage numbers on foot (`false`).
+- `HideDamageNumbers`: hide the damage numbers on foot, by the enemy bar and floating at the hit
+  (`false`).
 - `HideTargetBar`: hide the bar at the top with the name, level and health of the enemy you hit
   (`false`).
 - `HideMarkersOnFoot`: hide **all** the game's markers on foot: the red enemy markers and arrows,
@@ -104,6 +106,14 @@ ticks (no UE4SS background loops, which can crash UE4SS when several mods use th
 ## Status and known limits
 
 <!-- nexus:skip -->
+0.1.4, tested in game on 2026-11-08 (same save, all set mods incl. Tactical First Person and Bigger
+Armies): the reticle outline built once, from the game's tick, and the crosshair kept the same 5
+widgets over 8 weapon swaps and after a forced garbage collection; a floating damage number built
+the game's way (the enemy's `WB_SpecialHitPoint`) was collapsed as it was built with
+`HideDamageNumbers` on, and on screen with it off; frame time 9.8–9.9 ms on average. Not seen in a
+real fight yet: a floating number from a hit on an elite (the elites the test spawned took no
+damage).
+
 0.1.2, tested in game on 2026-11-06 (same save, all set mods incl. Tactical First Person and Bigger
 Armies): in a fight the game put the target bar up for 205 frames and it was on screen in none of
 them; shown again with the key, it is back. Both fallbacks seen with their hooks made to fail: the
@@ -122,8 +132,7 @@ Waypoints installed):
 - frame times with the mod on, standing in the station: 9.6–9.7 ms average, no frame over 30 ms,
   no hitch over 100 ms (the same spot measured 9.3–9.9 ms in earlier tests without it);
 - your saves untouched.
-Not yet seen in game: the damage numbers hidden (the test enemies were removed by the game before
-they were hit) and the optional key's message. A first build that also hid the on-foot enemy markers
+Not yet seen in game: the optional key's message. A first build that also hid the on-foot enemy markers
 crashed the game at the main menu (a UE4SS hook on a native engine function); that feature was
 removed and the crash did not come back.
 <!-- /nexus:skip -->

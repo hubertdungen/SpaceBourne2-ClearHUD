@@ -1,6 +1,6 @@
-# Changelog
+﻿# Changelog
 
-## 0.1.4 (not released yet)
+## 0.1.4 (2026-11-08)
 
 - Fixed: with `HideDamageNumbers` on, the floating damage numbers at the hit point on foot still
   showed (red on a headshot). They are a second kind of number, which the enemy itself adds to the
